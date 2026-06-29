@@ -254,91 +254,7 @@ export default function AgentsPage() {
               )}
 
               {expandedAgent === agent.id && (
-                <div className="border-t border-white/5 bg-black/20">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-white/5">
-                    <div className="p-4 space-y-1">
-                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Target Roles</p>
-                      <div className="flex flex-wrap gap-1">
-                        {agent.icp.jobTitles.map((t, i) => (
-                          <span key={i} className="text-[9px] bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded text-primary">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-1">
-                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Industries</p>
-                      <div className="flex flex-wrap gap-1">
-                        {agent.icp.industries.map((t, i) => (
-                          <span key={i} className="text-[9px] bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded text-secondary">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-1">
-                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Locations</p>
-                      <div className="flex flex-wrap gap-1">
-                        {agent.icp.locations.map((t, i) => (
-                          <span key={i} className="text-[9px] bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded text-accent">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-1">
-                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Company Sizes</p>
-                      <div className="flex flex-wrap gap-1">
-                        {agent.icp.companySizes.map((t, i) => (
-                          <span key={i} className="text-[9px] bg-white/10 border border-white/20 px-1.5 py-0.5 rounded text-gray-300">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-1">
-                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Keywords</p>
-                      <div className="flex flex-wrap gap-1">
-                        {agent.signals.engagementKeywords.map((t, i) => (
-                          <span key={i} className="text-[9px] bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-yellow-400">{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-1">
-                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Competitors</p>
-                      <div className="flex flex-wrap gap-1">
-                        {agent.signals.competitors.length > 0 ? agent.signals.competitors.map((t, i) => (
-                          <span key={i} className="text-[9px] bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded text-red-400">{t}</span>
-                        )) : <span className="text-[9px] text-gray-600">—</span>}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-1">
-                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Triggers</p>
-                      <div className="flex flex-wrap gap-1">
-                        {agent.signals.triggerTopIcp && <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400">Top ICP</span>}
-                        {agent.signals.triggerFunding && <span className="text-[9px] bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded text-green-400">Funding</span>}
-                        {agent.signals.triggerJobChanges && <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded text-purple-400">Job Changes</span>}
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-1">
-                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Influencers</p>
-                      <div className="flex flex-wrap gap-1">
-                        {agent.signals.influencers.length > 0 ? agent.signals.influencers.map((t, i) => (
-                          <span key={i} className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400 truncate max-w-[120px]">{t.split("/").pop() || t}</span>
-                        )) : <span className="text-[9px] text-gray-600">—</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="border-t border-white/5 p-4">
-                    <h4 className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Activity Log</h4>
-                    <div className="font-mono text-[10px] text-gray-500 space-y-1.5 max-h-32 overflow-y-auto">
-                      {agent.logs.map((log, i) => (
-                        <p key={i} className="flex items-start gap-2">
-                          <span className="text-gray-600 shrink-0 w-16">[{log.time}]</span>
-                          <span>{log.message}</span>
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                  {agent.icp.additionalCriteria && (
-                    <div className="border-t border-white/5 p-4">
-                      <h4 className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Additional Criteria</h4>
-                      <p className="text-[10px] text-gray-400 leading-relaxed">{agent.icp.additionalCriteria}</p>
-                    </div>
-                  )}
-                </div>
+                <AgentDetail agent={agent} />
               )}
             </div>
           ))}
@@ -775,6 +691,131 @@ export default function AgentsPage() {
                 {step === "review" ? (creatingAgent ? "Creating..." : "Launch Agent →") : "Next →"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AgentDetail({ agent }: { agent: AIAgent }) {
+  const [detailTab, setDetailTab] = useState<"overview" | "logs">("overview");
+  return (
+    <div className="border-t border-white/5 bg-black/20">
+      <div className="flex items-center gap-1 px-4 border-b border-white/5">
+        <button
+          onClick={() => setDetailTab("overview")}
+          className={`px-3 py-2 text-[9px] font-bold uppercase tracking-wider border-b-2 transition-colors ${
+            detailTab === "overview" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setDetailTab("logs")}
+          className={`flex items-center gap-1 px-3 py-2 text-[9px] font-bold uppercase tracking-wider border-b-2 transition-colors ${
+            detailTab === "logs" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          Activity Log
+          <span className="bg-white/10 text-gray-400 text-[8px] px-1.5 py-0.5 rounded-full">{agent.logs.length}</span>
+        </button>
+      </div>
+
+      {detailTab === "overview" ? (
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-white/5">
+          <div className="p-4 space-y-1">
+            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Target Roles</p>
+            <div className="flex flex-wrap gap-1">
+              {agent.icp.jobTitles.map((t, i) => (
+                <span key={i} className="text-[9px] bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded text-primary">{t}</span>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 space-y-1">
+            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Industries</p>
+            <div className="flex flex-wrap gap-1">
+              {agent.icp.industries.map((t, i) => (
+                <span key={i} className="text-[9px] bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded text-secondary">{t}</span>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 space-y-1">
+            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Locations</p>
+            <div className="flex flex-wrap gap-1">
+              {agent.icp.locations.map((t, i) => (
+                <span key={i} className="text-[9px] bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded text-accent">{t}</span>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 space-y-1">
+            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Company Sizes</p>
+            <div className="flex flex-wrap gap-1">
+              {agent.icp.companySizes.map((t, i) => (
+                <span key={i} className="text-[9px] bg-white/10 border border-white/20 px-1.5 py-0.5 rounded text-gray-300">{t}</span>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 space-y-1">
+            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Keywords</p>
+            <div className="flex flex-wrap gap-1">
+              {agent.signals.engagementKeywords.map((t, i) => (
+                <span key={i} className="text-[9px] bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-yellow-400">{t}</span>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 space-y-1">
+            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Competitors</p>
+            <div className="flex flex-wrap gap-1">
+              {agent.signals.competitors.length > 0 ? agent.signals.competitors.map((t, i) => (
+                <span key={i} className="text-[9px] bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded text-red-400">{t}</span>
+              )) : <span className="text-[9px] text-gray-600">—</span>}
+            </div>
+          </div>
+          <div className="p-4 space-y-1">
+            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Triggers</p>
+            <div className="flex flex-wrap gap-1">
+              {agent.signals.triggerTopIcp && <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400">Top ICP</span>}
+              {agent.signals.triggerFunding && <span className="text-[9px] bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded text-green-400">Funding</span>}
+              {agent.signals.triggerJobChanges && <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded text-purple-400">Job Changes</span>}
+            </div>
+          </div>
+          <div className="p-4 space-y-1">
+            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Influencers</p>
+            <div className="flex flex-wrap gap-1">
+              {agent.signals.influencers.length > 0 ? agent.signals.influencers.map((t, i) => (
+                <span key={i} className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400 truncate max-w-[120px]">{t.split("/").pop() || t}</span>
+              )) : <span className="text-[9px] text-gray-600">—</span>}
+            </div>
+          </div>
+          {agent.icp.additionalCriteria && (
+            <div className="col-span-full border-t border-white/5 p-4">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-1">Additional Criteria</p>
+              <p className="text-[10px] text-gray-400 leading-relaxed">{agent.icp.additionalCriteria}</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="p-4">
+          <div className="relative">
+            {agent.logs.length === 0 ? (
+              <p className="text-[10px] text-gray-500 text-center py-8">No activity yet. Launch your agent to start tracking.</p>
+            ) : (
+              <div className="space-y-0">
+                {agent.logs.map((log, i) => (
+                  <div key={i} className="flex items-start gap-3 pb-4 relative">
+                    {i < agent.logs.length - 1 && (
+                      <div className="absolute left-[5px] top-4 bottom-0 w-px bg-white/5" />
+                    )}
+                    <div className={`h-2.5 w-2.5 rounded-full mt-1 shrink-0 ${i === 0 ? "bg-secondary animate-pulse" : "bg-white/10"}`} />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-gray-300 leading-relaxed">{log.message}</p>
+                      <p className="text-[8px] text-gray-600 mt-0.5">{log.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

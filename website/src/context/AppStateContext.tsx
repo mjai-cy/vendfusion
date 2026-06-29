@@ -160,6 +160,7 @@ interface AppStateContextProps {
   updateCampaign: (campaignId: string, updates: Partial<Campaign>) => Promise<void>;
   deleteCampaign: (campaignId: string) => Promise<void>;
   createLeadList: (list: LeadList) => Promise<void>;
+  deleteLeadList: (listId: string) => void;
   generateAIMessage: (type: "email" | "linkedin", lead: Lead, companyDescription?: string) => Promise<{ subject?: string; body?: string; message?: string }>;
   connectLinkedIn: () => void;
   disconnectLinkedIn: () => void;
@@ -602,6 +603,13 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const deleteLeadList = (listId: string) => {
+    updateWorkspaceById(ensureWorkspace(), ws => ({
+      ...ws,
+      leadLists: (ws.leadLists || []).filter(l => l.id !== listId),
+    }));
+  };
+
   const generateAIMessage = async (type: "email" | "linkedin", lead: Lead, companyDescription?: string) => {
     const ws = activeWorkspace;
     const desc = companyDescription || ws?.scanReport?.businessSummary || ws?.scanReport?.aiSummary || "";
@@ -677,7 +685,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         enrichLead, resetScan, deleteWorkspace,
         createAgent, updateAgent, deleteAgent,
         createCampaign, updateCampaign, deleteCampaign,
-        createLeadList, generateAIMessage,
+        createLeadList, deleteLeadList, generateAIMessage,
         connectLinkedIn, disconnectLinkedIn,
         updateLinkedInSettings, updateCompanySettings,
       }}
