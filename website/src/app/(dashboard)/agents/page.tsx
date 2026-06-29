@@ -54,7 +54,11 @@ export default function AgentsPage() {
     setOneTimeList("");
   };
 
-  const handleCreateAgent = async () => {
+  const [creatingAgent, setCreatingAgent] = useState(false);
+
+  const handleCreateAgent = () => {
+    if (creatingAgent) return;
+    setCreatingAgent(true);
     const newAgent: AIAgent = agentType === "autopilot"
       ? {
           id: `agent-${Date.now()}`,
@@ -124,8 +128,10 @@ export default function AgentsPage() {
           icpMatchCount: 0,
           leadsSavedCount: 0,
         };
-    await createAgent(newAgent);
-    resetWizard();
+    createAgent(newAgent).finally(() => {
+      setCreatingAgent(false);
+      resetWizard();
+    });
   };
 
   const sizeOptions = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
@@ -717,9 +723,10 @@ export default function AgentsPage() {
                   else if (step === "leads") setStep("review");
                   else if (step === "review") handleCreateAgent();
                 }}
-                className="inline-flex h-9 items-center justify-center rounded-lg bg-primary hover:bg-primary-hover px-5 text-xs font-bold text-white shadow-lg shadow-primary/20 transition-all gap-1.5"
+                disabled={creatingAgent}
+                className="inline-flex h-9 items-center justify-center rounded-lg bg-primary hover:bg-primary-hover px-5 text-xs font-bold text-white shadow-lg shadow-primary/20 transition-all gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {step === "review" ? "Launch Agent →" : "Next →"}
+                {step === "review" ? (creatingAgent ? "Creating..." : "Launch Agent →") : "Next →"}
               </button>
             </div>
           </div>
