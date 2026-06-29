@@ -329,7 +329,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const report: ScanReport = data.report || data;
 
       const baseNow = Date.now();
-      const sampleLeads: Lead[] = [
+      const sampleLeads: Lead[] = (data.leads && data.leads.length > 0) ? data.leads : [
         { id: `lead-${baseNow}-1`, name: "Rajesh Mehta", role: "CTO", companyName: "TechVista Solutions", domain: "techvista.in", intentScore: 92, intentSignals: ["Competitor post interaction", "Active in target hashtags", "Company hiring spike"], email: "rajesh.m@techvista.in", phone: "+91 98251 02847", linkedinUrl: "https://linkedin.com/in/rajesh-mehta", outreachStatus: "new", enrichmentStatus: "enriched" },
         { id: `lead-${baseNow}-2`, name: "Priya Sharma", role: "VP of Engineering", companyName: "DataCraft Labs", domain: "datacraft.io", intentScore: 88, intentSignals: ["Recent funding round", "Similar tech stack", "Shared your blog post"], email: "priya@datacraft.io", phone: "+91 91726 48392", linkedinUrl: "https://linkedin.com/in/priya-sharma", outreachStatus: "new", enrichmentStatus: "enriched" },
         { id: `lead-${baseNow}-3`, name: "Arun Patel", role: "Director of Operations", companyName: "LogiNext Systems", domain: "loginext.com", intentScore: 85, intentSignals: ["Profile visit (3x in 7 days)", "Job change (new role)", "Attended competitor webinar"], email: "arun.p@loginext.com", phone: "+91 99182 37461", linkedinUrl: "https://linkedin.com/in/arun-patel", outreachStatus: "new", enrichmentStatus: "enriched" },

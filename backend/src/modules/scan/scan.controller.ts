@@ -10,7 +10,7 @@ export class ScanController {
     if (!url) {
       return { success: false, message: 'URL is required' };
     }
-    const report = this.scanService.generateReport(url);
-    return { success: true, report };
+    const report = await this.scanService.generateReport(url);
+    return { success: true, report, leads: report.leads };
   }
 }
