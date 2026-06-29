@@ -6,12 +6,24 @@ export class AiController {
   constructor(private readonly aiService: AiService) {}
 
   @Post('generate-outreach')
-  async generate(
+  async generateEmail(
     @Body('leadName') leadName: string,
     @Body('role') role: string,
     @Body('company') company: string,
     @Body('triggers') triggers: string[],
+    @Body('companyDescription') companyDescription?: string,
   ) {
-    return this.aiService.generateOutreach(leadName, role, company, triggers);
+    return this.aiService.generateOutreach(leadName, role, company, triggers, companyDescription);
+  }
+
+  @Post('generate-linkedin')
+  async generateLinkedIn(
+    @Body('leadName') leadName: string,
+    @Body('role') role: string,
+    @Body('company') company: string,
+    @Body('triggers') triggers: string[],
+    @Body('companyDescription') companyDescription?: string,
+  ) {
+    return this.aiService.generateLinkedInMessage(leadName, role, company, triggers, companyDescription);
   }
 }

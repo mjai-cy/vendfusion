@@ -22,17 +22,6 @@ export interface ScanReport {
   aiReadinessScore: number;
 }
 
-export interface FileDetail {
-  id: string;
-  name: string;
-  size: string;
-  type: string;
-  uploadedAt: string;
-  status: "processing" | "chunked" | "embedded";
-  chunks: number;
-  extractedText: string;
-}
-
 export interface Lead {
   id: string;
   name: string;
@@ -42,55 +31,66 @@ export interface Lead {
   intentScore: number;
   intentSignals: string[];
   email: string;
-  whatsapp: string;
-  outreachDrafts: {
-    email: { subject: string; body: string };
-    whatsapp: string;
-  };
-  status: "new" | "reviewing" | "sent" | "interested" | "meeting_booked" | "ignored";
-  crmSyncStatus: "not_synced" | "synced";
-}
-
-export interface SequenceStep {
-  id: string;
-  order: number;
-  channel: "email" | "linkedin" | "whatsapp";
-  delayDays: number;
-  subject?: string;
-  template: string;
-  condition: "auto" | "wait_for_reply" | "wait_for_meeting";
-  status?: "pending" | "sent" | "replied" | "completed";
+  phone: string;
+  linkedinUrl: string;
+  outreachStatus: "new" | "contacted" | "replied" | "meeting_booked" | "ignored";
+  enrichmentStatus: "pending" | "enriched" | "failed";
 }
 
 export interface Campaign {
   id: string;
   name: string;
-  subject: string;
-  template: string;
+  leadListId: string;
+  channel: "linkedin" | "email" | "multichannel";
+  inviteMessage: string;
+  followUpMessage: string;
+  status: "active" | "paused" | "completed";
+  createdAt: string;
   sentCount: number;
-  openRate: number;
-  replyRate: number;
-  meetingsRate: number;
-  status: "draft" | "active" | "paused";
-  channel: "email" | "linkedin" | "multichannel";
-  steps: SequenceStep[];
+  replyCount: number;
+  meetingCount: number;
 }
 
-export interface WeeklyReport {
-  week: string;
-  date: string;
-  replyRateImprovement: string;
-  meetingRateImprovement: string;
-  learnings: string[];
-  proposedOptimizations: {
-    id: string;
-    description: string;
-    impact: string;
-    status: "pending" | "approved" | "rejected";
-  }[];
+export interface AIAgent {
+  id: string;
+  name: string;
+  type: "autopilot" | "onetime";
+  status: "active" | "paused" | "completed";
+  createdAt: string;
+  icp: {
+    jobTitles: string[];
+    industries: string[];
+    companySizes: string[];
+    locations: string[];
+    companyTypes: string[];
+    additionalCriteria: string;
+  };
+  signals: {
+    companyLinkedIn: string;
+    engagementKeywords: string[];
+    influencers: string[];
+    triggerTopIcp: boolean;
+    triggerFunding: boolean;
+    triggerJobChanges: boolean;
+    linkedInGroups: string[];
+    linkedInEvents: string[];
+    competitors: string[];
+    excludedCompanies: string[];
+  };
+  logs: { message: string; time: string }[];
+  leadsAnalyzed: number;
+  icpMatchCount: number;
+  leadsSavedCount: number;
 }
 
-// Each URL scan owns its own isolated workspace
+export interface LeadList {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  leadCount: number;
+}
+
 export interface Workspace {
   id: string;
   name: string;
@@ -98,54 +98,73 @@ export interface Workspace {
   createdAt: string;
   scanReport: ScanReport | null;
   leads: Lead[];
-  campaigns: Campaign[];
-  weeklyReports: WeeklyReport[];
-  uploadedFiles: FileDetail[];
   leadSearchesThisMonth: number;
   aiMessagesThisMonth: number;
+  agents: AIAgent[];
+  campaigns: Campaign[];
+  leadLists: LeadList[];
+  linkedInConnected: boolean;
+  linkedInWeeklyLimit: number;
+  linkedInActiveDays: string[];
+  autoEnrichEmails: boolean;
+  autoEnrichPhones: boolean;
+  autoGenerateMessages: boolean;
+  excludeServiceProviders: boolean;
 }
 
 interface AppStateContextProps {
   user: { name: string; email: string } | null;
   isLoggedIn: boolean;
   isEmailVerified: boolean;
-  onboardingStep: number;
-  plan: "none" | "starter" | "pro";
+  plan: "none" | "pro";
   workspaceName: string;
-  freeScanUsed: boolean;
   scanReport: ScanReport | null;
   scanningInProgress: boolean;
-  mode: "manual" | "pro-ai";
-  apolloConnected: boolean;
-  zohoConnected: boolean;
-  apolloApiKey: string;
-  zohoAuthToken: string;
+  mode: "manual" | "auto";
+  hubspotConnected: boolean;
+  pipedriveConnected: boolean;
+  linkedInConnected: boolean;
+  autoEnrichEmails: boolean;
+  autoEnrichPhones: boolean;
+  autoGenerateMessages: boolean;
+  excludeServiceProviders: boolean;
+  linkedInWeeklyLimit: number;
+  linkedInActiveDays: string[];
   workspaces: Workspace[];
   activeWorkspaceId: string | null;
   switchWorkspace: (id: string) => void;
-  uploadedFiles: FileDetail[];
   leads: Lead[];
-  campaigns: Campaign[];
-  weeklyReports: WeeklyReport[];
   leadSearchesThisMonth: number;
   aiMessagesThisMonth: number;
   login: (email: string, name: string) => void;
   logout: () => void;
   verifyOtp: (otp: string) => boolean;
-  selectPlan: (selectedPlan: "starter" | "pro") => void;
+  selectPlan: (selectedPlan: "pro") => void;
   runWebsiteScan: (url: string) => Promise<ScanReport>;
   updateWorkspaceName: (name: string) => void;
-  connectApollo: (apiKey: string) => void;
-  connectZoho: (token: string) => void;
-  uploadDocument: (name: string, size: number, type: string) => void;
-  toggleSellingMode: (newMode: "manual" | "pro-ai") => void;
-  sendOutreachAction: (leadId: string, type: "email" | "whatsapp") => void;
-  updateLeadStatus: (leadId: string, status: Lead["status"]) => void;
-  createCampaign: (name: string, subject: string, template: string, channel?: Campaign["channel"], steps?: SequenceStep[]) => void;
-  toggleCampaignStatus: (id: string) => void;
-  handleWeeklyOptimization: (reportIndex: number, optId: string, action: "approved" | "rejected") => void;
+  connectHubspot: (apiKey: string) => void;
+  connectPipedrive: (token: string) => void;
+  toggleSellingMode: (newMode: "manual" | "auto") => void;
+  sendOutreachAction: (leadId: string, type: "email" | "linkedin") => void;
+  updateLeadStatus: (leadId: string, status: Lead["outreachStatus"]) => void;
+  enrichLead: (leadId: string) => void;
   resetScan: () => void;
   deleteWorkspace: (id: string) => void;
+  agents: AIAgent[];
+  campaigns: Campaign[];
+  leadLists: LeadList[];
+  createAgent: (agent: AIAgent) => void;
+  updateAgent: (agentId: string, updates: Partial<AIAgent>) => void;
+  deleteAgent: (agentId: string) => void;
+  createCampaign: (campaign: Campaign) => void;
+  updateCampaign: (campaignId: string, updates: Partial<Campaign>) => void;
+  deleteCampaign: (campaignId: string) => void;
+  createLeadList: (list: LeadList) => void;
+  generateAIMessage: (type: "email" | "linkedin", lead: Lead, companyDescription?: string) => Promise<{ subject?: string; body?: string; message?: string }>;
+  connectLinkedIn: () => void;
+  disconnectLinkedIn: () => void;
+  updateLinkedInSettings: (weeklyLimit: number, activeDays: string[]) => void;
+  updateCompanySettings: (settings: { autoEnrichEmails?: boolean; autoEnrichPhones?: boolean; autoGenerateMessages?: boolean; excludeServiceProviders?: boolean }) => void;
 }
 
 const AppStateContext = createContext<AppStateContextProps | undefined>(undefined);
@@ -156,80 +175,77 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState(1);
-  const [plan, setPlan] = useState<"none" | "starter" | "pro">("none");
-  const [freeScanUsed, setFreeScanUsed] = useState(false);
+  const [plan, setPlan] = useState<"none" | "pro">("none");
   const [scanningInProgress, setScanningInProgress] = useState(false);
-  const [mode, setMode] = useState<"manual" | "pro-ai">("manual");
-  const [apolloConnected, setApolloConnected] = useState(false);
-  const [zohoConnected, setZohoConnected] = useState(false);
-  const [apolloApiKey, setApolloApiKey] = useState("");
-  const [zohoAuthToken, setZohoAuthToken] = useState("");
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
+  const [hubspotConnected, setHubspotConnected] = useState(false);
+  const [pipedriveConnected, setPipedriveConnected] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
 
   const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId) ?? null;
   const scanReport = activeWorkspace?.scanReport ?? null;
   const leads = activeWorkspace?.leads ?? [];
-  const campaigns = activeWorkspace?.campaigns ?? [];
-  const weeklyReports = activeWorkspace?.weeklyReports ?? [];
-  const uploadedFiles = activeWorkspace?.uploadedFiles ?? [];
   const leadSearchesThisMonth = activeWorkspace?.leadSearchesThisMonth ?? 0;
   const aiMessagesThisMonth = activeWorkspace?.aiMessagesThisMonth ?? 0;
+  const agents = activeWorkspace?.agents ?? [];
+  const campaigns = activeWorkspace?.campaigns ?? [];
+  const leadLists = activeWorkspace?.leadLists ?? [];
+  const linkedInConnected = activeWorkspace?.linkedInConnected ?? false;
+  const autoEnrichEmails = activeWorkspace?.autoEnrichEmails ?? false;
+  const autoEnrichPhones = activeWorkspace?.autoEnrichPhones ?? false;
+  const autoGenerateMessages = activeWorkspace?.autoGenerateMessages ?? false;
+  const excludeServiceProviders = activeWorkspace?.excludeServiceProviders ?? false;
+  const linkedInWeeklyLimit = activeWorkspace?.linkedInWeeklyLimit ?? 100;
+  const linkedInActiveDays = activeWorkspace?.linkedInActiveDays ?? ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const workspaceName = activeWorkspace?.name ?? "No Workspace";
 
   const updateActiveWorkspace = (updater: (ws: Workspace) => Workspace) => {
     if (!activeWorkspaceId) return;
     setWorkspaces(prev => {
       const updated = prev.map(ws => ws.id === activeWorkspaceId ? updater(ws) : ws);
-      localStorage.setItem("xyz_workspaces", JSON.stringify(updated));
+      localStorage.setItem("gj_workspaces", JSON.stringify(updated));
       return updated;
     });
   };
 
   useEffect(() => {
-    const cachedUser = localStorage.getItem("xyz_user");
-    const cachedLoggedIn = localStorage.getItem("xyz_isLoggedIn");
-    const cachedVerified = localStorage.getItem("xyz_isEmailVerified");
-    const cachedOnboarding = localStorage.getItem("xyz_onboardingStep");
-    const cachedPlan = localStorage.getItem("xyz_plan");
-    const cachedFreeScan = localStorage.getItem("xyz_freeScanUsed");
-    const cachedApollo = localStorage.getItem("xyz_apolloConnected");
-    const cachedZoho = localStorage.getItem("xyz_zohoConnected");
-    const cachedMode = localStorage.getItem("xyz_mode");
-    const cachedWorkspaces = localStorage.getItem("xyz_workspaces");
-    const cachedActiveWsId = localStorage.getItem("xyz_activeWorkspaceId");
+    const cachedUser = localStorage.getItem("gj_user");
+    const cachedLoggedIn = localStorage.getItem("gj_isLoggedIn");
+    const cachedVerified = localStorage.getItem("gj_isEmailVerified");
+    const cachedPlan = localStorage.getItem("gj_plan");
+    const cachedMode = localStorage.getItem("gj_mode");
+    const cachedWorkspaces = localStorage.getItem("gj_workspaces");
+    const cachedActiveWsId = localStorage.getItem("gj_activeWorkspaceId");
+    const cachedHubspot = localStorage.getItem("gj_hubspotConnected");
+    const cachedPipedrive = localStorage.getItem("gj_pipedriveConnected");
 
     if (cachedUser) setUser(JSON.parse(cachedUser));
     if (cachedLoggedIn) setIsLoggedIn(cachedLoggedIn === "true");
     if (cachedVerified) setIsEmailVerified(cachedVerified === "true");
-    if (cachedOnboarding) setOnboardingStep(Number(cachedOnboarding));
-    if (cachedPlan) setPlan(cachedPlan as "none" | "starter" | "pro");
-    if (cachedFreeScan) setFreeScanUsed(cachedFreeScan === "true");
-    if (cachedApollo) setApolloConnected(cachedApollo === "true");
-    if (cachedZoho) setZohoConnected(cachedZoho === "true");
-    if (cachedMode) setMode(cachedMode as "manual" | "pro-ai");
+    if (cachedPlan) setPlan(cachedPlan as "none" | "pro");
+    if (cachedMode) setMode(cachedMode as "manual" | "auto");
     if (cachedWorkspaces) setWorkspaces(JSON.parse(cachedWorkspaces));
     if (cachedActiveWsId) setActiveWorkspaceId(cachedActiveWsId);
+    if (cachedHubspot) setHubspotConnected(cachedHubspot === "true");
+    if (cachedPipedrive) setPipedriveConnected(cachedPipedrive === "true");
   }, []);
 
   const login = (email: string, name: string) => {
     const newUser = { name, email };
     setUser(newUser);
     setIsLoggedIn(true);
-    localStorage.setItem("xyz_user", JSON.stringify(newUser));
-    localStorage.setItem("xyz_isLoggedIn", "true");
+    localStorage.setItem("gj_user", JSON.stringify(newUser));
+    localStorage.setItem("gj_isLoggedIn", "true");
   };
 
   const logout = () => {
     setUser(null);
     setIsLoggedIn(false);
     setIsEmailVerified(false);
-    setOnboardingStep(1);
     setPlan("none");
-    setFreeScanUsed(false);
-    setApolloConnected(false);
-    setZohoConnected(false);
+    setHubspotConnected(false);
+    setPipedriveConnected(false);
     setWorkspaces([]);
     setActiveWorkspaceId(null);
     localStorage.clear();
@@ -238,19 +254,15 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const verifyOtp = (otp: string) => {
     if (otp.length === 6) {
       setIsEmailVerified(true);
-      setOnboardingStep(2);
-      localStorage.setItem("xyz_isEmailVerified", "true");
-      localStorage.setItem("xyz_onboardingStep", "2");
+      localStorage.setItem("gj_isEmailVerified", "true");
       return true;
     }
     return false;
   };
 
-  const selectPlan = (selectedPlan: "starter" | "pro") => {
+  const selectPlan = (selectedPlan: "pro") => {
     setPlan(selectedPlan);
-    setOnboardingStep(3);
-    localStorage.setItem("xyz_plan", selectedPlan);
-    localStorage.setItem("xyz_onboardingStep", "3");
+    localStorage.setItem("gj_plan", selectedPlan);
   };
 
   const updateWorkspaceName = (name: string) => {
@@ -259,7 +271,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const switchWorkspace = (id: string) => {
     setActiveWorkspaceId(id);
-    localStorage.setItem("xyz_activeWorkspaceId", id);
+    localStorage.setItem("gj_activeWorkspaceId", id);
   };
 
   const runWebsiteScan = async (url: string): Promise<ScanReport> => {
@@ -283,22 +295,27 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         createdAt: new Date().toISOString(),
         scanReport: report,
         leads: [],
-        campaigns: [],
-        weeklyReports: [],
-        uploadedFiles: [],
         leadSearchesThisMonth: 0,
         aiMessagesThisMonth: 0,
+        agents: [],
+        campaigns: [],
+        leadLists: [],
+        linkedInConnected: false,
+        linkedInWeeklyLimit: 100,
+        linkedInActiveDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        autoEnrichEmails: false,
+        autoEnrichPhones: false,
+        autoGenerateMessages: false,
+        excludeServiceProviders: false,
       };
 
       setWorkspaces(prev => {
         const updated = [newWorkspace, ...prev];
-        localStorage.setItem("xyz_workspaces", JSON.stringify(updated));
+        localStorage.setItem("gj_workspaces", JSON.stringify(updated));
         return updated;
       });
       setActiveWorkspaceId(newWorkspace.id);
-      localStorage.setItem("xyz_activeWorkspaceId", newWorkspace.id);
-      setFreeScanUsed(true);
-      localStorage.setItem("xyz_freeScanUsed", "true");
+      localStorage.setItem("gj_activeWorkspaceId", newWorkspace.id);
       setScanningInProgress(false);
       return report;
     } catch (err) {
@@ -313,10 +330,8 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     deleteWorkspace(activeWorkspaceId);
   };
 
-  // Delete any workspace by ID — handles both active and non-active cleanly
   const deleteWorkspace = (id: string) => {
     const updated = workspaces.filter(ws => ws.id !== id);
-    // If deleting the active workspace, switch to next available
     const nextId = id === activeWorkspaceId
       ? (updated[0]?.id ?? null)
       : activeWorkspaceId;
@@ -324,157 +339,255 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setWorkspaces(updated);
     setActiveWorkspaceId(nextId);
 
-    localStorage.setItem("xyz_workspaces", JSON.stringify(updated));
-    if (nextId) localStorage.setItem("xyz_activeWorkspaceId", nextId);
-    else localStorage.removeItem("xyz_activeWorkspaceId");
+    localStorage.setItem("gj_workspaces", JSON.stringify(updated));
+    if (nextId) localStorage.setItem("gj_activeWorkspaceId", nextId);
+    else localStorage.removeItem("gj_activeWorkspaceId");
   };
 
-  const connectApollo = (apiKey: string) => {
-    setApolloConnected(true);
-    setApolloApiKey(apiKey);
-    localStorage.setItem("xyz_apolloConnected", "true");
+  const connectHubspot = (apiKey: string) => {
+    setHubspotConnected(true);
+    localStorage.setItem("gj_hubspotConnected", "true");
   };
 
-  const connectZoho = (token: string) => {
-    setZohoConnected(true);
-    setZohoAuthToken(token);
-    localStorage.setItem("xyz_zohoConnected", "true");
+  const connectPipedrive = (token: string) => {
+    setPipedriveConnected(true);
+    localStorage.setItem("gj_pipedriveConnected", "true");
   };
 
-  const uploadDocument = (name: string, size: number, type: string) => {
-    const sizeStr = size > 1024 * 1024
-      ? `${(size / (1024 * 1024)).toFixed(1)} MB`
-      : `${(size / 1024).toFixed(0)} KB`;
-
-    const newFile: FileDetail = {
-      id: `file-${Date.now()}`,
-      name,
-      size: sizeStr,
-      type,
-      uploadedAt: new Date().toLocaleDateString(),
-      status: "processing",
-      chunks: 0,
-      extractedText: "",
-    };
-
-    updateActiveWorkspace(ws => ({ ...ws, uploadedFiles: [newFile, ...ws.uploadedFiles] }));
-
-    setTimeout(() => {
-      updateActiveWorkspace(ws => ({
-        ...ws,
-        uploadedFiles: ws.uploadedFiles.map(f =>
-          f.id === newFile.id
-            ? { ...f, status: "chunked" as const, chunks: Math.floor(Math.random() * 15) + 3 }
-            : f
-        ),
-      }));
-    }, 2000);
-
-    setTimeout(() => {
-      updateActiveWorkspace(ws => ({
-        ...ws,
-        uploadedFiles: ws.uploadedFiles.map(f =>
-          f.id === newFile.id
-            ? {
-                ...f,
-                status: "embedded" as const,
-                extractedText: `Extracted company context from ${name}. Embedded 512-dimension vectors into pgvector catalog.`,
-              }
-            : f
-        ),
-      }));
-    }, 4500);
-  };
-
-  const toggleSellingMode = (newMode: "manual" | "pro-ai") => {
-    if (plan === "starter" && newMode === "pro-ai") {
-      alert("AI Mode requires a Pro AI subscription. Please upgrade your plan.");
-      return;
-    }
+  const toggleSellingMode = (newMode: "manual" | "auto") => {
     setMode(newMode);
-    localStorage.setItem("xyz_mode", newMode);
+    localStorage.setItem("gj_mode", newMode);
   };
 
-  const sendOutreachAction = (leadId: string, type: "email" | "whatsapp") => {
+  const sendOutreachAction = (leadId: string, type: "email" | "linkedin") => {
     updateActiveWorkspace(ws => ({
       ...ws,
-      leads: ws.leads.map(l => l.id === leadId ? { ...l, status: "sent" as const } : l),
+      leads: ws.leads.map(l => l.id === leadId ? { ...l, outreachStatus: "contacted" as const } : l),
       aiMessagesThisMonth: ws.aiMessagesThisMonth + 1,
     }));
   };
 
-  const updateLeadStatus = (leadId: string, status: Lead["status"]) => {
+  const updateLeadStatus = (leadId: string, status: Lead["outreachStatus"]) => {
     updateActiveWorkspace(ws => ({
       ...ws,
-      leads: ws.leads.map(l => l.id === leadId ? { ...l, status } : l),
+      leads: ws.leads.map(l => l.id === leadId ? { ...l, outreachStatus: status } : l),
     }));
   };
 
-  const createCampaign = (name: string, subject: string, template: string, channel: Campaign["channel"] = "multichannel", steps?: SequenceStep[]) => {
-    const defaultSteps: SequenceStep[] = steps || (() => {
-      if (channel === "email") return [{
-        id: `step-${Date.now()}-0`, order: 1, channel: "email", delayDays: 0,
-        subject, template, condition: "auto" as const, status: "pending" as const,
-      }];
-      if (channel === "linkedin") return [{
-        id: `step-${Date.now()}-0`, order: 1, channel: "linkedin", delayDays: 0,
-        subject: "", template, condition: "auto" as const, status: "pending" as const,
-      }];
-      return [
-        { id: `step-${Date.now()}-0`, order: 1, channel: "linkedin", delayDays: 0, subject: "", template: `Hi {{first_name}}, noticed {{company}} is growing. Would love to connect!`, condition: "auto" as const, status: "pending" as const },
-        { id: `step-${Date.now()}-1`, order: 2, channel: "email", delayDays: 2, subject, template, condition: "wait_for_reply" as const, status: "pending" as const },
-        { id: `step-${Date.now()}-2`, order: 3, channel: "linkedin", delayDays: 5, subject: "", template: `Hey {{first_name}} — following up on growth opportunities. Available for a quick chat?`, condition: "auto" as const, status: "pending" as const },
-        { id: `step-${Date.now()}-3`, order: 4, channel: "email", delayDays: 7, subject: `Quick follow-up: ${subject}`, template: `Hi {{first_name}},\n\nJust circling back. Would love to show you how we've helped similar teams.\n\nBest,\n{{sender_name}}`, condition: "auto" as const, status: "pending" as const },
-      ];
-    })();
-
-    const newCamp: Campaign = {
-      id: `camp-${Date.now()}`,
-      name,
-      subject,
-      template,
-      sentCount: 0,
-      openRate: 0,
-      replyRate: 0,
-      meetingsRate: 0,
-      status: "draft",
-      channel,
-      steps: defaultSteps,
-    };
-    updateActiveWorkspace(ws => ({ ...ws, campaigns: [newCamp, ...ws.campaigns] }));
-  };
-
-  const toggleCampaignStatus = (id: string) => {
+  const enrichLead = (leadId: string) => {
     updateActiveWorkspace(ws => ({
       ...ws,
-      campaigns: ws.campaigns.map(c =>
-        c.id === id ? { ...c, status: c.status === "active" ? "paused" : "active" } : c
+      leads: ws.leads.map(l =>
+        l.id === leadId
+          ? {
+              ...l,
+              enrichmentStatus: "enriched" as const,
+              email: `${l.name.toLowerCase().replace(/\s+/g, ".")}@${l.domain}`,
+              phone: "+1-555-" + Math.floor(1000 + Math.random() * 9000),
+              intentSignals: [
+                "Competitor post interaction",
+                "Profile visit (3x in 7 days)",
+                "Job change (new role)",
+                "Following your company",
+                "Active in target hashtags",
+                "Company hiring spike",
+                "Recent funding round",
+                "Attended competitor webinar",
+                "Downloaded competitor whitepaper",
+                "Similar tech stack",
+                "Shared your blog post",
+                "Connects with team members",
+              ],
+            }
+          : l
       ),
     }));
   };
 
-  const handleWeeklyOptimization = (reportIndex: number, optId: string, action: "approved" | "rejected") => {
-    updateActiveWorkspace(ws => {
-      const updatedReports = [...ws.weeklyReports];
-      const opt = updatedReports[reportIndex]?.proposedOptimizations.find(o => o.id === optId);
-      if (opt) opt.status = action;
-      return { ...ws, weeklyReports: updatedReports };
-    });
+  const apiCall = async (path: string, method: string, body?: any) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}${path}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new Error(`API ${method} ${path} failed: ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn(`[API Fallback] ${method} ${path} failed — using local state`, err);
+      return null;
+    }
+  };
+
+  const createAgent = async (agent: AIAgent) => {
+    const data = await apiCall('/agents', 'POST', { ...agent, workspaceId: activeWorkspaceId });
+    if (data) {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        agents: [...(ws.agents || []), data],
+      }));
+    } else {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        agents: [...(ws.agents || []), agent],
+      }));
+    }
+  };
+
+  const updateAgent = async (agentId: string, updates: Partial<AIAgent>) => {
+    const data = await apiCall(`/agents/${agentId}`, 'PATCH', updates);
+    if (data) {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        agents: (ws.agents || []).map(a => a.id === agentId ? { ...a, ...data } : a),
+      }));
+    } else {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        agents: (ws.agents || []).map(a => a.id === agentId ? { ...a, ...updates } : a),
+      }));
+    }
+  };
+
+  const deleteAgent = async (agentId: string) => {
+    await apiCall(`/agents/${agentId}`, 'DELETE');
+    updateActiveWorkspace(ws => ({
+      ...ws,
+      agents: (ws.agents || []).filter(a => a.id !== agentId),
+    }));
+  };
+
+  const createCampaign = async (campaign: Campaign) => {
+    const data = await apiCall('/campaigns', 'POST', { ...campaign, workspaceId: activeWorkspaceId });
+    if (data) {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        campaigns: [...(ws.campaigns || []), data],
+      }));
+    } else {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        campaigns: [...(ws.campaigns || []), campaign],
+      }));
+    }
+  };
+
+  const updateCampaign = async (campaignId: string, updates: Partial<Campaign>) => {
+    const data = await apiCall(`/campaigns/${campaignId}`, 'PATCH', updates);
+    if (data) {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        campaigns: (ws.campaigns || []).map(c => c.id === campaignId ? { ...c, ...data } : c),
+      }));
+    } else {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        campaigns: (ws.campaigns || []).map(c => c.id === campaignId ? { ...c, ...updates } : c),
+      }));
+    }
+  };
+
+  const deleteCampaign = async (campaignId: string) => {
+    await apiCall(`/campaigns/${campaignId}`, 'DELETE');
+    updateActiveWorkspace(ws => ({
+      ...ws,
+      campaigns: (ws.campaigns || []).filter(c => c.id !== campaignId),
+    }));
+  };
+
+  const createLeadList = async (list: LeadList) => {
+    const data = await apiCall('/lead-lists', 'POST', { ...list, workspaceId: activeWorkspaceId });
+    if (data) {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        leadLists: [...(ws.leadLists || []), data],
+      }));
+    } else {
+      updateActiveWorkspace(ws => ({
+        ...ws,
+        leadLists: [...(ws.leadLists || []), list],
+      }));
+    }
+  };
+
+  const generateAIMessage = async (type: "email" | "linkedin", lead: Lead, companyDescription?: string) => {
+    const ws = activeWorkspace;
+    const desc = companyDescription || ws?.scanReport?.businessSummary || ws?.scanReport?.aiSummary || "";
+    try {
+      if (type === "email") {
+        const res = await fetch(`${BACKEND_URL}/ai/generate-outreach`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            leadName: lead.name,
+            role: lead.role,
+            company: lead.companyName,
+            triggers: lead.intentSignals,
+            companyDescription: desc,
+          }),
+        });
+        if (res.ok) return await res.json();
+      } else {
+        const res = await fetch(`${BACKEND_URL}/ai/generate-linkedin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            leadName: lead.name,
+            role: lead.role,
+            company: lead.companyName,
+            triggers: lead.intentSignals,
+            companyDescription: desc,
+          }),
+        });
+        if (res.ok) return await res.json();
+      }
+    } catch (err) {
+      console.warn("AI generate failed, using fallback:", err);
+    }
+    return {};
+  };
+
+  const connectLinkedIn = async () => {
+    await apiCall(`/workspaces/${activeWorkspaceId}/settings`, 'PATCH', { linkedInConnected: true });
+    updateActiveWorkspace(ws => ({ ...ws, linkedInConnected: true }));
+  };
+
+  const disconnectLinkedIn = async () => {
+    await apiCall(`/workspaces/${activeWorkspaceId}/settings`, 'PATCH', { linkedInConnected: false });
+    updateActiveWorkspace(ws => ({ ...ws, linkedInConnected: false }));
+  };
+
+  const updateLinkedInSettings = async (weeklyLimit: number, activeDays: string[]) => {
+    await apiCall(`/workspaces/${activeWorkspaceId}/settings`, 'PATCH', { linkedInWeeklyLimit: weeklyLimit, linkedInActiveDays: activeDays });
+    updateActiveWorkspace(ws => ({ ...ws, linkedInWeeklyLimit: weeklyLimit, linkedInActiveDays: activeDays }));
+  };
+
+  const updateCompanySettings = async (settings: { autoEnrichEmails?: boolean; autoEnrichPhones?: boolean; autoGenerateMessages?: boolean; excludeServiceProviders?: boolean }) => {
+    await apiCall(`/workspaces/${activeWorkspaceId}/settings`, 'PATCH', settings);
+    updateActiveWorkspace(ws => ({ ...ws, ...settings }));
   };
 
   return (
     <AppStateContext.Provider
       value={{
-        user, isLoggedIn, isEmailVerified, onboardingStep, plan, workspaceName,
-        freeScanUsed, scanReport, scanningInProgress,
-        mode, apolloConnected, zohoConnected, apolloApiKey, zohoAuthToken,
+        user, isLoggedIn, isEmailVerified, plan, workspaceName,
+        scanReport, scanningInProgress,
+        mode, hubspotConnected, pipedriveConnected,
+        linkedInConnected, autoEnrichEmails, autoEnrichPhones,
+        autoGenerateMessages, excludeServiceProviders,
+        linkedInWeeklyLimit, linkedInActiveDays,
         workspaces, activeWorkspaceId, switchWorkspace,
-        uploadedFiles, leads, campaigns, weeklyReports,
-        leadSearchesThisMonth, aiMessagesThisMonth,
+        leads, leadSearchesThisMonth, aiMessagesThisMonth,
+        agents, campaigns, leadLists,
         login, logout, verifyOtp, selectPlan, runWebsiteScan,
-        updateWorkspaceName, connectApollo, connectZoho, uploadDocument,
+        updateWorkspaceName, connectHubspot, connectPipedrive,
         toggleSellingMode, sendOutreachAction, updateLeadStatus,
-        createCampaign, toggleCampaignStatus, handleWeeklyOptimization, resetScan, deleteWorkspace,
+        enrichLead, resetScan, deleteWorkspace,
+        createAgent, updateAgent, deleteAgent,
+        createCampaign, updateCampaign, deleteCampaign,
+        createLeadList, generateAIMessage,
+        connectLinkedIn, disconnectLinkedIn,
+        updateLinkedInSettings, updateCompanySettings,
       }}
     >
       {children}

@@ -5,3 +5,5 @@ export { Campaign } from './campaign.entity';
 export { Visitor } from './visitor.entity';
 export { UploadedFile } from './uploaded-file.entity';
 export { SystemSetting } from './system-setting.entity';
+export { Agent } from './agent.entity';
+export { LeadList } from './lead-list.entity';

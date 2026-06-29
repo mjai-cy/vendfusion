@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppState } from "@/context/AppStateContext";
-import { Shield, Menu, X, ArrowRight } from "lucide-react";
+import { Sparkles, Menu, X, ArrowRight } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const { isLoggedIn, user } = useAppState();
@@ -17,8 +17,7 @@ export const Navbar: React.FC = () => {
     { label: "Home", href: "/" },
     { label: "Features", href: "/features" },
     { label: "Pricing", href: "/pricing" },
-    { label: "AI Website Scanner", href: "/scan" },
-    { label: "About", href: "/about" },
+    { label: "FAQ", href: "/faq" },
     { label: "Contact", href: "/contact" },
   ];
 
@@ -26,20 +25,18 @@ export const Navbar: React.FC = () => {
     <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-dark-bg/70 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20 border border-primary/40 group-hover:border-primary transition-all">
-                <Shield className="h-5 w-5 text-primary group-hover:text-accent transition-colors" />
+                <Sparkles className="h-5 w-5 text-primary group-hover:text-accent transition-colors" />
                 <div className="absolute inset-0 rounded-lg bg-primary/20 blur opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-                XYZ<span className="text-primary">.AI</span>
+                Gojiberry<span className="text-primary">.ai</span>
               </span>
             </Link>
           </div>
 
-          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
               <Link
@@ -54,7 +51,6 @@ export const Navbar: React.FC = () => {
             ))}
           </div>
 
-          {/* Auth Action Buttons */}
           <div className="hidden md:flex items-center gap-4">
             {isLoggedIn ? (
               <div className="flex items-center gap-4">
@@ -87,7 +83,6 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -99,7 +94,6 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Panel */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-white/5 bg-dark-bg px-4 pt-2 pb-4 space-y-1">
           {navLinks.map((link) => (

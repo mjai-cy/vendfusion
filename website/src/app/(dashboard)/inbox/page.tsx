@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import { useAppState, Lead } from "@/context/AppStateContext";
 import { 
   Inbox, MessageSquare, Send, Check, RefreshCw, 
-  ChevronRight, Calendar, User, Search, AlertCircle, 
-  Building2, Sparkles, AlertCircleIcon, ShieldCheck
+  ChevronRight, Calendar, User, Search, Sparkles
 } from "lucide-react";
 
 interface MessageThread {
@@ -14,7 +13,7 @@ interface MessageThread {
   role: string;
   companyName: string;
   unread: boolean;
-  status: "interested" | "reply" | "ignored" | "meeting_booked";
+  status: "replied" | "interested" | "ignored" | "meeting_booked";
   timestamp: string;
   history: {
     sender: "lead" | "agent" | "user";
@@ -28,7 +27,6 @@ export default function SmartInboxPage() {
   const { leads, updateLeadStatus } = useAppState();
 
   const [threads, setThreads] = useState<MessageThread[]>([]);
-
   const [selectedThreadId, setSelectedThreadId] = useState<string>("lead-1");
   const [draftReplyText, setDraftReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -36,7 +34,6 @@ export default function SmartInboxPage() {
 
   const selectedThread = threads.find(t => t.leadId === selectedThreadId) || threads[0];
 
-  // Initialize textarea draft when thread changes
   React.useEffect(() => {
     if (selectedThread) {
       setDraftReplyText(selectedThread.aiDraft);
@@ -48,7 +45,6 @@ export default function SmartInboxPage() {
     setIsSending(true);
 
     setTimeout(() => {
-      // Add reply to history
       setThreads(prev => prev.map(t => {
         if (t.leadId === selectedThreadId) {
           return {
@@ -72,13 +68,12 @@ export default function SmartInboxPage() {
     }, 1000);
   };
 
-  const handleStatusChange = (status: "interested" | "reply" | "ignored" | "meeting_booked") => {
+  const handleStatusChange = (status: "interested" | "replied" | "ignored" | "meeting_booked") => {
     setThreads(prev => prev.map(t => 
       t.leadId === selectedThreadId ? { ...t, status } : t
     ));
 
-    // Update global lead status context
-    let contextStatus: Lead["status"] = "interested";
+    let contextStatus: Lead["outreachStatus"] = "replied";
     if (status === "meeting_booked") contextStatus = "meeting_booked";
     if (status === "ignored") contextStatus = "ignored";
     
@@ -91,17 +86,15 @@ export default function SmartInboxPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Header */}
       <div className="border-b border-white/5 pb-4">
-        <h1 className="text-xl font-bold text-white tracking-tight">Smart Inbox & Replies</h1>
+        <h1 className="text-xl font-bold text-white tracking-tight">Smart Inbox &amp; Replies</h1>
         <p className="text-[11px] text-gray-400">
-          Respond to interested prospects with AI-assisted draft sequences and manage calendar bookings.
+          Respond to interested prospects with AI-assisted draft replies and manage meeting bookings.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
-        {/* Left: Message Threads list */}
         <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel overflow-hidden">
           <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Prospect Inbox</h3>
@@ -127,7 +120,6 @@ export default function SmartInboxPage() {
                     key={thread.leadId}
                     onClick={() => {
                       setSelectedThreadId(thread.leadId);
-                      // Mark as read
                       setThreads(prev => prev.map(t => t.leadId === thread.leadId ? { ...t, unread: false } : t));
                     }}
                     className={`p-4 flex items-start gap-3 cursor-pointer transition-colors ${
@@ -137,14 +129,11 @@ export default function SmartInboxPage() {
                     <div className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-gray-300 uppercase shrink-0">
                       {thread.leadName.split(" ").map(n => n[0]).join("")}
                     </div>
-
                     <div className="space-y-1 flex-grow overflow-hidden">
                       <div className="flex items-center justify-between">
-                        <h4 className={`text-xs font-bold text-white flex items-center gap-1.5`}>
+                        <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
                           {thread.leadName}
-                          {thread.unread && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                          )}
+                          {thread.unread && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
                         </h4>
                         <span className="text-[9px] text-gray-500 font-mono">{thread.timestamp}</span>
                       </div>
@@ -152,8 +141,6 @@ export default function SmartInboxPage() {
                       <p className="text-[10px] text-gray-500 truncate leading-relaxed pt-1">
                         {lastMessage ? lastMessage.text : ""}
                       </p>
-                      
-                      {/* Status Badge */}
                       <div className="pt-2">
                         <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase ${
                           thread.status === "interested" ? "bg-green-500/10 text-green-400 border-green-500/20" :
@@ -171,21 +158,17 @@ export default function SmartInboxPage() {
           )}
         </div>
 
-        {/* Right: Message conversation and AI response composer */}
         {selectedThread && (
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Conversation Window */}
             <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-5 space-y-4">
               
-              {/* Header profile info */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4 gap-3">
                 <div className="space-y-0.5">
                   <h3 className="text-sm font-bold text-white">{selectedThread.leadName}</h3>
                   <p className="text-xs text-gray-400">{selectedThread.role} · {selectedThread.companyName}</p>
                 </div>
                 
-                {/* Thread Status selectors */}
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     onClick={() => handleStatusChange("meeting_booked")}
@@ -222,7 +205,6 @@ export default function SmartInboxPage() {
                 </div>
               )}
 
-              {/* Chat Thread history */}
               <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
                 {selectedThread.history.map((msg, idx) => {
                   const isAgent = msg.sender === "agent";
@@ -231,11 +213,11 @@ export default function SmartInboxPage() {
                     <div
                       key={idx}
                       className={`flex flex-col max-w-[80%] ${
-                        isUser ? "ml-auto items-end" : isAgent ? "mr-auto items-start" : "mr-auto items-start"
+                        isUser ? "ml-auto items-end" : "mr-auto items-start"
                       }`}
                     >
                       <span className="text-[9px] text-gray-500 uppercase tracking-wider block font-bold mb-1">
-                        {isUser ? "You" : isAgent ? "AI Agent Outreach" : selectedThread.leadName} · {msg.time}
+                        {isUser ? "You" : isAgent ? "AI Agent" : selectedThread.leadName} · {msg.time}
                       </span>
                       <div className={`rounded-lg p-3 text-xs leading-relaxed ${
                         isUser 
@@ -252,12 +234,11 @@ export default function SmartInboxPage() {
               </div>
             </div>
 
-            {/* AI assisted Composer */}
             {draftReplyText !== undefined && (
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/5 pb-3">
                   <div className="flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                    <Sparkles className="h-4 w-4 text-primary" />
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider">AI Copilot Reply Draft</h3>
                   </div>
                   <span className="text-[9px] text-gray-500 font-mono">Suggested reply</span>
@@ -293,7 +274,7 @@ export default function SmartInboxPage() {
                       ) : (
                         <>
                           <Send className="h-3.5 w-3.5" />
-                          Send Assured Reply
+                          Send Reply
                         </>
                       )}
                     </button>
@@ -306,7 +287,6 @@ export default function SmartInboxPage() {
         )}
 
       </div>
-
     </div>
   );
 }

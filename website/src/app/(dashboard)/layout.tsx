@@ -5,9 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppState } from "@/context/AppStateContext";
 import { 
-  Shield, LayoutDashboard, Target, Mail, Database, 
+  Sparkles, LayoutDashboard, Target, Mail, 
   Zap, LogOut, Menu, X,
-  RefreshCw, ChevronDown, Globe, Plus, Check, Trash2
+  RefreshCw, ChevronDown, Globe, Plus, Check, Trash2,
+  Bot, Megaphone, Settings
 } from "lucide-react";
 
 function SidebarWrapper({ children }: { children: React.ReactNode }) {
@@ -23,10 +24,8 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [wsDropdownOpen, setWsDropdownOpen] = useState(false);
 
-  // Authentication check - wait for client hydration
   useEffect(() => {
     setHydrated(true);
-
     if (!isLoggedIn && hydrated) {
       router.push("/login");
       return;
@@ -35,14 +34,13 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { label: "Overview", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { label: "AI Agents", href: "/agents", icon: <Target className="h-4 w-4" /> },
-    { label: "Lead Intelligence", href: "/leads", icon: <Target className="h-4 w-4" /> },
-    { label: "Smart Inbox", href: "/inbox", icon: <Mail className="h-4 w-4" /> },
-    { label: "Campaign Builder", href: "/campaigns", icon: <Mail className="h-4 w-4" /> },
-    { label: "Website Visitors", href: "/visitors", icon: <Globe className="h-4 w-4" /> },
-    { label: "Knowledge Center", href: "/knowledge", icon: <Database className="h-4 w-4" /> },
-    { label: "Deliverability", href: "/deliverability", icon: <Shield className="h-4 w-4" /> },
-    { label: "Weekly Optimization", href: "/learning", icon: <RefreshCw className="h-4 w-4" /> },
+    { label: "AI Agents", href: "/agents", icon: <Bot className="h-4 w-4" /> },
+    { label: "Leads", href: "/leads", icon: <Target className="h-4 w-4" /> },
+    { label: "Campaigns", href: "/campaigns", icon: <Megaphone className="h-4 w-4" /> },
+    { label: "Inbox", href: "/inbox", icon: <Mail className="h-4 w-4" /> },
+    { label: "Integrations", href: "/integrations", icon: <Zap className="h-4 w-4" /> },
+    { label: "Settings", href: "/settings", icon: <Settings className="h-4 w-4" /> },
+    { label: "Learning", href: "/learning", icon: <RefreshCw className="h-4 w-4" /> },
   ];
 
   const handleLogout = () => {
@@ -51,11 +49,10 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
   };
 
   const handleModeChange = () => {
-    const nextMode = mode === "manual" ? "pro-ai" : "manual";
+    const nextMode = mode === "manual" ? "auto" : "manual";
     toggleSellingMode(nextMode);
   };
 
-  // Show a blank loading screen while client state is hydrating
   if (!hydrated) {
     return (
       <div className="min-h-screen bg-dark-bg flex items-center justify-center">
@@ -67,17 +64,15 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-screen bg-dark-bg text-gray-100 flex font-sans">
       
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-white/5 bg-black/30 backdrop-blur-xl z-20">
         
-        {/* Workspace Brand Header */}
         <div className="h-16 flex items-center px-6 border-b border-white/5 justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 border border-primary/40">
-              <Shield className="h-4.5 w-4.5 text-primary" />
+              <Sparkles className="h-4.5 w-4.5 text-primary" />
             </div>
             <span className="text-base font-bold text-white tracking-tight">
-              XYZ<span className="text-primary">.AI</span>
+              Gojiberry<span className="text-primary">.ai</span>
             </span>
           </Link>
           <span className="rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-primary uppercase">
@@ -85,7 +80,6 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
           </span>
         </div>
 
-        {/* Workspace Switcher */}
         <div className="px-4 py-3 border-b border-white/5 relative">
           <button
             onClick={() => setWsDropdownOpen(prev => !prev)}
@@ -100,7 +94,6 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
             <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform shrink-0 ${wsDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
-          {/* Workspace Dropdown */}
           {wsDropdownOpen && (
             <div className="absolute left-4 right-4 top-full mt-1 rounded-lg border border-white/10 bg-dark-bg/95 backdrop-blur-xl shadow-xl z-50 overflow-hidden">
               <div className="px-3 py-2 border-b border-white/5">
@@ -132,11 +125,9 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
                           <Check className="h-3.5 w-3.5 text-primary shrink-0" />
                         )}
                       </button>
-                      {/* Delete workspace button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Directly delete workspace without confirmation
                           deleteWorkspace(ws.id);
                           setWsDropdownOpen(false);
                         }}
@@ -151,19 +142,18 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
               </div>
               <div className="border-t border-white/5 p-2">
                 <Link
-                  href="/scan"
+                  href="/signup"
                   onClick={() => setWsDropdownOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors text-xs font-semibold text-primary"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  New Scan
+                  Add Website
                 </Link>
               </div>
             </div>
           )}
         </div>
 
-        {/* Sidebar Nav */}
         <nav className="flex-grow py-4 px-3 space-y-1">
           {navItems.map((item) => {
             const active = pathname === item.href;
@@ -184,21 +174,19 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Mode & Profile Footer */}
         <div className="p-4 border-t border-white/5 space-y-4 bg-black/10">
           
-          {/* Selling Mode Selector */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-[9px] font-bold text-gray-500 uppercase tracking-wider">
               <span>Execution Mode</span>
-              <span className={mode === "pro-ai" ? "text-secondary" : "text-primary"}>
-                {mode === "pro-ai" ? "Autonomous" : "Manual"}
+              <span className={mode === "auto" ? "text-secondary" : "text-primary"}>
+                {mode === "auto" ? "Autonomous" : "Manual"}
               </span>
             </div>
             <button
               onClick={handleModeChange}
               className={`w-full flex items-center justify-center gap-1.5 h-8 rounded text-xs font-bold border transition-all ${
-                mode === "pro-ai"
+                mode === "auto"
                   ? "bg-secondary/15 border-secondary/30 text-secondary hover:bg-secondary/20"
                   : "bg-primary/10 border-primary/25 text-primary hover:bg-primary/15"
               }`}
@@ -208,7 +196,6 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          {/* User profile */}
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-gray-300">
@@ -230,13 +217,12 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile Header Bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 border-b border-white/5 bg-dark-bg/80 backdrop-blur-md z-30 flex items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 border border-primary/40">
-            <Shield className="h-4 w-4 text-primary" />
+            <Sparkles className="h-4 w-4 text-primary" />
           </div>
-          <span className="text-sm font-bold text-white">XYZ<span className="text-primary">.AI</span></span>
+          <span className="text-sm font-bold text-white">Gojiberry<span className="text-primary">.ai</span></span>
         </Link>
         
         <div className="flex items-center gap-3">
@@ -250,7 +236,6 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Mobile Drawer Backdrop */}
       {sidebarOpen && (
         <div 
           onClick={() => setSidebarOpen(false)}
@@ -258,7 +243,6 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Mobile Drawer Menu */}
       <aside className={`md:hidden fixed inset-y-0 right-0 w-64 bg-dark-bg border-l border-white/5 z-50 transform transition-transform duration-300 ${
         sidebarOpen ? "translate-x-0" : "translate-x-full"
       } p-6 flex flex-col justify-between`}>
@@ -304,13 +288,13 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
               setSidebarOpen(false);
             }}
             className={`w-full flex items-center justify-center gap-1.5 h-8 rounded text-xs font-bold border ${
-              mode === "pro-ai"
+              mode === "auto"
                 ? "bg-secondary/15 border-secondary/30 text-secondary"
                 : "bg-primary/10 border-primary/25 text-primary"
             }`}
           >
             <Zap className="h-3.5 w-3.5" />
-            {mode === "pro-ai" ? "Manual Mode" : "AI Mode"}
+            {mode === "auto" ? "Manual Mode" : "AI Mode"}
           </button>
           
           <button
@@ -323,7 +307,6 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Workspace content */}
       <main className="flex-1 md:pl-64 flex flex-col min-h-screen">
         <div className="flex-grow p-6 pt-20 md:pt-6">
           {children}

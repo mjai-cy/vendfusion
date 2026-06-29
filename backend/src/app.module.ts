@@ -4,17 +4,16 @@ import { AppService } from './app.service';
 import { SecurityModule } from './modules/security/security.module';
 import { AiModule } from './modules/ai/ai.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
-import { PaymentModule } from './modules/payment/payment.module';
 import { OutreachModule } from './modules/outreach/outreach.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { ApolloModule } from './modules/apollo/apollo.module';
-import { ZohoModule } from './modules/zoho/zoho.module';
 import { ScanModule } from './modules/scan/scan.module';
-import { SequencesModule } from './modules/sequences/sequences.module';
-import { VisitorsModule } from './modules/visitors/visitors.module';
-import { DeliverabilityModule } from './modules/deliverability/deliverability.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AgentModule } from './modules/agent/agent.module';
+import { LeadListModule } from './modules/lead-list/lead-list.module';
+import { CampaignModule } from './modules/campaign/campaign.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -22,16 +21,15 @@ import { AuthModule } from './modules/auth/auth.module';
     SecurityModule,
     AiModule,
     SupabaseModule,
-    PaymentModule,
     OutreachModule,
     CalendarModule,
     ApolloModule,
-    ZohoModule,
     ScanModule,
-    SequencesModule,
-    VisitorsModule,
-    DeliverabilityModule,
     AuthModule,
+    AgentModule,
+    LeadListModule,
+    CampaignModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

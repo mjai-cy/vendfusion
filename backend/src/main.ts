@@ -16,7 +16,8 @@ app.enableCors({
   credentials: true,
 });
   
-  await app.listen(3002);
-  console.log(`XYZ.AI Revenue Backend Service is running on: ${await app.getUrl()}`);
+  const port = process.env.PORT || (process.env.RAILWAY_ENVIRONMENT ? undefined : 3002);
+  await app.listen(port ?? 3002);
+  console.log(`Gojiberry.ai Backend Service is running on: ${await app.getUrl()}`);
 }
 bootstrap();

@@ -4,7 +4,7 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppState } from "@/context/AppStateContext";
-import { Shield, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -67,18 +67,10 @@ function LoginForm() {
         
         const urlParam = searchParams.get("url") || searchParams.get("domain");
 
-        // Routing logic depending on onboarding state
-        if (!isEmailVerified) {
-          router.push(urlParam ? `/onboarding?step=1&url=${encodeURIComponent(urlParam)}` : "/onboarding?step=1");
-        } else if (plan === "none") {
-          router.push(urlParam ? `/onboarding?step=2&url=${encodeURIComponent(urlParam)}` : "/onboarding?step=2");
+        if (urlParam) {
+          router.push(`/onboarding?url=${encodeURIComponent(urlParam)}`);
         } else {
-          // If they enter a new URL, we route directly to onboarding step 3 (Scan) even if they had a plan!
-          if (urlParam) {
-            router.push(`/onboarding?step=3&url=${encodeURIComponent(urlParam)}`);
-          } else {
-            window.location.href = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:3001";
-          }
+          router.push("/dashboard");
         }
       } else {
         setErrorMsg(data.message || "Invalid OTP code entered");
@@ -102,7 +94,7 @@ function LoginForm() {
                 ? `We couldn't deliver the email (SMTP blocked on cloud free tier). Your verification OTP code is: ${sandboxOtp}`
                 : `We've sent a 6-digit verification code to ${email}`
               )
-            : "Sign in to manage your AI revenue campaigns."
+            : "Sign in to manage your AI agent."
           }
         </p>
       </div>
@@ -224,26 +216,26 @@ export default function LoginPage() {
         <div className="relative z-10">
           <Link href="/" className="inline-flex items-center gap-2 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20 border border-primary/40 group-hover:border-primary transition-all">
-              <Shield className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <span className="text-xl font-bold tracking-tight text-white">
-              XYZ<span className="text-primary">.AI</span>
+              Gojiberry<span className="text-primary">.ai</span>
             </span>
           </Link>
         </div>
 
         <div className="relative z-10 space-y-4 max-w-sm">
           <h2 className="text-2xl font-extrabold text-white leading-tight">
-            Log back in to your active selling pipeline
+            Your AI agent finds high intent leads and contacts them for you.
           </h2>
           <p className="text-gray-400 text-xs leading-relaxed">
-            Monitor campaigns status, review Sunday optimization updates, check lead counts, and manage knowledge databases.
+            Enter your website. Gojiberry learns your business, identifies your best prospects, and runs multichannel outreach automatically.
           </p>
         </div>
 
         <div className="relative z-10 flex gap-1.5 items-center text-[10px] text-gray-500 font-mono uppercase tracking-wider">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          XYZ.AI Portal Auth Secure
+          Backed by Y Combinator P26
         </div>
       </div>
 

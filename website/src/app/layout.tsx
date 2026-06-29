@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "XYZ.AI | Autonomous AI Sales Agent & Revenue Platform",
-  description: "Automate outbound prospecting, find leads, enrich intelligence, verify email scans, and schedule customer meetings with XYZ.AI's complete Autonomous Company Brain.",
-  keywords: ["AI sales agent", "B2B prospecting", "automated outreach", "website scanning", "Zoho CRM", "Apollo integration"],
+  title: "Gojiberry.ai | Your AI agent finds high intent leads and contacts them for you",
+  description: "Enter your website. Gojiberry learns your business, identifies your best prospects, and runs multichannel outreach automatically. Backed by Y Combinator P26.",
+  keywords: ["AI sales agent", "B2B prospecting", "automated outreach", "lead generation", "LinkedIn outreach"],
   openGraph: {
-    title: "XYZ.AI Revenue Platform",
-    description: "Your Autonomous Sales Intelligence & Execution Engine.",
+    title: "Gojiberry.ai - AI Sales Agent",
+    description: "Your AI agent finds high intent leads and contacts them for you.",
     type: "website",
   }
 };

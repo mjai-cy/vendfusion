@@ -4,6 +4,8 @@ import { Lead } from './lead.entity';
 import { Campaign } from './campaign.entity';
 import { Visitor } from './visitor.entity';
 import { UploadedFile } from './uploaded-file.entity';
+import { Agent } from './agent.entity';
+import { LeadList } from './lead-list.entity';
 
 @Entity('workspaces')
 export class Workspace {
@@ -25,6 +27,27 @@ export class Workspace {
   @Column({ default: 0 })
   aiMessagesThisMonth: number;
 
+  @Column({ default: false })
+  linkedInConnected: boolean;
+
+  @Column({ default: 100 })
+  linkedInWeeklyLimit: number;
+
+  @Column({ type: 'simple-array', default: 'Mon,Tue,Wed,Thu,Fri' })
+  linkedInActiveDays: string[];
+
+  @Column({ default: false })
+  autoEnrichEmails: boolean;
+
+  @Column({ default: false })
+  autoEnrichPhones: boolean;
+
+  @Column({ default: false })
+  autoGenerateMessages: boolean;
+
+  @Column({ default: false })
+  excludeServiceProviders: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -40,6 +63,12 @@ export class Workspace {
 
   @OneToMany(() => Campaign, camp => camp.workspace)
   campaigns: Campaign[];
+
+  @OneToMany(() => Agent, agent => agent.workspace)
+  agents: Agent[];
+
+  @OneToMany(() => LeadList, ll => ll.workspace)
+  leadLists: LeadList[];
 
   @OneToMany(() => Visitor, v => v.workspace)
   visitors: Visitor[];

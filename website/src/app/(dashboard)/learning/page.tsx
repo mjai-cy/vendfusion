@@ -1,115 +1,117 @@
 "use client";
 
 import React, { useState } from "react";
-import { useAppState } from "@/context/AppStateContext";
 import { 
-  Check, X, RefreshCw, BarChart2, ShieldAlert, 
-  Settings, Play, HelpCircle, ArrowUpRight, CheckCircle2 
+  Check, X, RefreshCw, BarChart2, ArrowUpRight, Sparkles
 } from "lucide-react";
 
-export default function WeeklyLearningDashboard() {
-  const { weeklyReports, handleWeeklyOptimization } = useAppState();
-  const [activeReportIdx] = useState(0);
+interface Optimization {
+  id: string;
+  description: string;
+  impact: string;
+  status: "pending" | "approved" | "rejected";
+}
 
-  const report = weeklyReports[activeReportIdx];
+export default function LearningPage() {
+  const [optimizations] = useState<Optimization[]>([
+    { id: "opt-1", description: "Adjust LinkedIn message tone to be more consultative — data shows educational intros get 34% higher acceptance.", impact: "High", status: "pending" },
+    { id: "opt-2", description: "Shift email follow-up timing from 3 days to 2 days — faster follow-ups increased reply rate by 18% in similar segments.", impact: "Medium", status: "pending" },
+    { id: "opt-3", description: "Prioritize VP-level titles over Director-level — VP roles converted at 2.3x rate this week.", impact: "High", status: "pending" },
+  ]);
+
+  const [statusMap, setStatusMap] = useState<Record<string, "pending" | "approved" | "rejected">>({});
 
   const handleAction = (optId: string, action: "approved" | "rejected") => {
-    handleWeeklyOptimization(activeReportIdx, optId, action);
+    setStatusMap(prev => ({ ...prev, [optId]: action }));
   };
 
   const getStatusStyle = (status: "pending" | "approved" | "rejected") => {
     switch (status) {
       case "approved": return "text-secondary bg-secondary/15 border-secondary/20";
       case "rejected": return "text-red-400 bg-red-500/15 border-red-500/20";
-      default: return "text-gray-400 bg-white/5 border-white/10 animate-pulse";
+      default: return "text-gray-400 bg-white/5 border-white/10";
     }
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Header */}
       <div className="border-b border-white/5 pb-4">
-        <h1 className="text-xl font-bold text-white tracking-tight">Weekly AI Optimization Loop</h1>
+        <h1 className="text-xl font-bold text-white tracking-tight">Weekly Learning &amp; Optimization</h1>
         <p className="text-[11px] text-gray-400">
-          The AI engine collects campaign performance metrics every Sunday. Review suggestions and approve updates below.
+          Your agent gets better every week. Review AI-suggested improvements to keep optimizing your outreach.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
-        {/* Left: Learnings & Improvements summary */}
-        {report && (
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-white/5 bg-dark-bg/40 p-5 glass-panel flex items-center justify-between">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Reply Rate Shift</span>
-                  <p className="text-2xl font-extrabold text-secondary">{report.replyRateImprovement}</p>
-                </div>
-                <div className="h-9 w-9 rounded bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
-                  <ArrowUpRight className="h-5 w-5" />
-                </div>
+        <div className="lg:col-span-2 space-y-6">
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-white/5 bg-dark-bg/40 p-5 glass-panel flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Reply Rate</span>
+                <p className="text-2xl font-extrabold text-secondary">+24%</p>
               </div>
-
-              <div className="rounded-xl border border-white/5 bg-dark-bg/40 p-5 glass-panel flex items-center justify-between">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Meetings Rate Shift</span>
-                  <p className="text-2xl font-extrabold text-secondary">{report.meetingRateImprovement}</p>
-                </div>
-                <div className="h-9 w-9 rounded bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
-                  <ArrowUpRight className="h-5 w-5" />
-                </div>
+              <div className="h-9 w-9 rounded bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
+                <ArrowUpRight className="h-5 w-5" />
               </div>
             </div>
-
-            {/* In-app key learnings */}
-            <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-5 space-y-4">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Sunday Ingestion Insights</h3>
-              <div className="space-y-3">
-                {report.learnings.map((learn, idx) => (
-                  <div key={idx} className="flex items-start gap-3 text-xs text-gray-300">
-                    <span className="text-primary font-bold shrink-0 mt-0.5">•</span>
-                    <p className="leading-relaxed font-sans">{learn}</p>
-                  </div>
-                ))}
+            <div className="rounded-xl border border-white/5 bg-dark-bg/40 p-5 glass-panel flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Meeting Rate</span>
+                <p className="text-2xl font-extrabold text-secondary">+12%</p>
+              </div>
+              <div className="h-9 w-9 rounded bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
+                <ArrowUpRight className="h-5 w-5" />
               </div>
             </div>
-
-            {/* Sandbox safety */}
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-gray-400 leading-relaxed font-sans">
-              <strong>Data Isolation Sandbox:</strong> Model improvement reports are generated locally using isolated prompt weighting schemas. Recommended revisions never modify core codebase components or leak parameters across tenant workspaces.
-            </div>
-
           </div>
-        )}
 
-        {/* Right: Optimizations Approve/Reject Actions Board */}
-        {report && (
-          <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-5 space-y-6">
-            <div className="space-y-1 border-b border-white/5 pb-4">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Proposed Agent Revisions</h3>
-              <p className="text-[10px] text-gray-400">
-                AI changes will not apply until you manually approve.
-              </p>
+          <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-5 space-y-4">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" /> This Week's Learnings
+            </h3>
+            <div className="space-y-3">
+              {[
+                "LinkedIn connection acceptance is 40% higher when the message references a specific post or achievement.",
+                "Tuesday and Wednesday mornings show the highest email open rates for your industry.",
+                "Leads with 3+ intent signals convert at 5x the rate of single-signal leads.",
+                "Adding social proof (e.g., 'we work with similar companies') increases reply rate by 28%.",
+              ].map((learn, idx) => (
+                <div key={idx} className="flex items-start gap-3 text-xs text-gray-300">
+                  <span className="text-primary font-bold shrink-0 mt-0.5">•</span>
+                  <p className="leading-relaxed">{learn}</p>
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
 
-            <div className="space-y-4">
-              {report.proposedOptimizations.map((opt) => (
+        <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-5 space-y-6">
+          <div className="space-y-1 border-b border-white/5 pb-4">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">Proposed Optimizations</h3>
+            <p className="text-[10px] text-gray-400">
+              AI-suggested changes to improve your agent's performance.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {optimizations.map((opt) => {
+              const currentStatus = statusMap[opt.id] || opt.status;
+              return (
                 <div key={opt.id} className="border border-white/5 bg-black/40 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] text-gray-500 font-mono font-bold uppercase">{opt.impact}</span>
-                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded border uppercase ${getStatusStyle(opt.status)}`}>
-                      {opt.status}
+                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded border uppercase ${getStatusStyle(currentStatus)}`}>
+                      {currentStatus}
                     </span>
                   </div>
-                  <p className="text-[11px] text-gray-300 leading-relaxed font-sans font-medium">
+                  <p className="text-[11px] text-gray-300 leading-relaxed font-medium">
                     {opt.description}
                   </p>
                   
-                  {opt.status === "pending" && (
+                  {currentStatus === "pending" && (
                     <div className="flex gap-2 pt-2 border-t border-white/5">
                       <button
                         onClick={() => handleAction(opt.id, "approved")}
@@ -126,29 +128,12 @@ export default function WeeklyLearningDashboard() {
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-
-            {/* Testing -> Production indicator */}
-            <div className="space-y-2 border-t border-white/5 pt-4">
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Agent Deployment Status</span>
-              <div className="rounded bg-black/30 border border-white/5 p-3 space-y-2 text-[10px] font-mono text-gray-500">
-                <div className="flex justify-between items-center text-secondary">
-                  <span>[Testing sandbox]</span>
-                  <span>Active</span>
-                </div>
-                <div className="flex justify-between items-center text-gray-400">
-                  <span>[Production pipeline]</span>
-                  <span>Standing by</span>
-                </div>
-              </div>
-            </div>
-
+              );
+            })}
           </div>
-        )}
+        </div>
 
       </div>
-
     </div>
   );
 }

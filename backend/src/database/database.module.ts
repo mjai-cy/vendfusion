@@ -1,6 +1,6 @@
 import { Module, Global, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting } from '../entities';
+import { User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting, Agent, LeadList } from '../entities';
 
 function getDatabaseConfig() {
   const url = process.env.DATABASE_URL || process.env.SUPABASE_URL;
@@ -19,7 +19,7 @@ function getDatabaseConfig() {
       type: 'postgres' as const,
       url: dbUrl,
       ssl: { rejectUnauthorized: false },
-      entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting],
+      entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting, Agent, LeadList],
       synchronize: true,
       logging: false,
       extra: {
@@ -33,7 +33,7 @@ function getDatabaseConfig() {
     type: 'postgres' as const,
     url,
     ssl: { rejectUnauthorized: false },
-    entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting],
+    entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting, Agent, LeadList],
     synchronize: true,
     logging: false,
   };
@@ -43,7 +43,7 @@ function getDatabaseConfig() {
 @Module({
   imports: [
     ...(getDatabaseConfig() ? [TypeOrmModule.forRoot(getDatabaseConfig())] : []),
-    TypeOrmModule.forFeature([User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting]),
+    TypeOrmModule.forFeature([User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting, Agent, LeadList]),
   ],
   exports: [TypeOrmModule],
 })

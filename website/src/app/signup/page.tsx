@@ -4,7 +4,7 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppState } from "@/context/AppStateContext";
-import { Shield, ArrowRight, Loader2, Sparkles, Check } from "lucide-react";
+import { Sparkles, ArrowRight, Loader2, Check } from "lucide-react";
 
 function SignupForm() {
   const router = useRouter();
@@ -66,12 +66,9 @@ function SignupForm() {
       if (data.success) {
         login(email, name);
         
-        const planParam = searchParams.get("plan");
         const urlParam = searchParams.get("url") || searchParams.get("domain");
-        
-        let redirectUrl = "/onboarding?step=1";
-        if (planParam) redirectUrl += `&plan=${planParam}`;
-        if (urlParam) redirectUrl += `&url=${encodeURIComponent(urlParam)}`;
+        let redirectUrl = "/onboarding";
+        if (urlParam) redirectUrl += `?url=${encodeURIComponent(urlParam)}`;
         
         router.push(redirectUrl);
       } else {
@@ -85,53 +82,51 @@ function SignupForm() {
   };
 
   return (
-    <div className="relative min-h-screen bg-dark-bg flex flex-col md:flex-row overflow-hidden grid-bg">
-      {/* Sidebar Info - Left */}
+    <div className="relative min-h-screen bg-dark-bg flex flex-col md:flex-row overflow-hidden">
       <div className="relative w-full md:w-1/2 bg-black/40 border-r border-white/5 p-8 md:p-16 flex flex-col justify-between space-y-12">
         <div className="absolute inset-0 radial-glow z-0" />
         
         <div className="relative z-10">
           <Link href="/" className="inline-flex items-center gap-2 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20 border border-primary/40 group-hover:border-primary transition-all">
-              <Shield className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <span className="text-xl font-bold tracking-tight text-white">
-              XYZ<span className="text-primary">.AI</span>
+              Gojiberry<span className="text-primary">.ai</span>
             </span>
           </Link>
         </div>
 
         <div className="relative z-10 space-y-6 max-w-md">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-            Deploy your autonomous prospecting engine
+            Your AI agent finds high intent leads and contacts them for you.
           </h2>
           <p className="text-gray-400 text-sm">
-            XYZ.AI reads your product documents, maps competitor strengths, filters lead signals, and writes hyper-targeted copy.
+            Enter your website. Gojiberry learns your business, identifies your best prospects, and runs multichannel outreach automatically.
           </p>
 
           <div className="space-y-3 pt-4 border-t border-white/5 text-xs text-gray-400">
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-primary shrink-0" />
-              <span>Isolated secure pgvector sandbox</span>
+              <span>3-minute setup — just enter your website</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-primary shrink-0" />
-              <span>Full control via Manual or Autonomous Mode</span>
+              <span>Detects 30+ buying signals automatically</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-primary shrink-0" />
-              <span>900M+ lead database with real-time CRM pipeline sync</span>
+              <span>AI writes and sends personalized LinkedIn + Email</span>
             </div>
           </div>
         </div>
 
         <div className="relative z-10 flex gap-1.5 items-center text-[10px] text-gray-500 font-mono uppercase tracking-wider">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          XYZ.AI Revenue Security Verified
+          Backed by Y Combinator P26
         </div>
       </div>
 
-      {/* Form Area - Right */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8 md:p-16">
         <div className="w-full max-w-sm space-y-8 animate-fade-in">
           <div className="space-y-2">
@@ -141,10 +136,10 @@ function SignupForm() {
             <p className="text-xs text-gray-400">
               {otpSent 
                 ? (sandboxOtp 
-                    ? `We couldn't deliver the email (SMTP blocked on cloud free tier). Your verification OTP code is: ${sandboxOtp}`
+                    ? `Your verification OTP code is: ${sandboxOtp}`
                     : `We've sent a 6-digit verification code to ${email}`
                   )
-                : "Sign up in under 2 minutes. No credit card required."
+                : "Free trial. No credit card required."
               }
             </p>
           </div>
@@ -256,14 +251,7 @@ function SignupForm() {
 
           <p className="text-center text-xs text-gray-500">
             Already have an account?{" "}
-            <Link 
-              href={
-                searchParams.get("url") || searchParams.get("domain")
-                  ? `/login?url=${encodeURIComponent(searchParams.get("url") || searchParams.get("domain") || "")}`
-                  : "/login"
-              } 
-              className="text-primary hover:underline font-semibold"
-            >
+            <Link href="/login" className="text-primary hover:underline font-semibold">
               Log in
             </Link>
           </p>

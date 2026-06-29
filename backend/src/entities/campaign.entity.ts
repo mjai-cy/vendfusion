@@ -9,32 +9,29 @@ export class Campaign {
   @Column()
   name: string;
 
-  @Column()
-  subject: string;
+  @Column({ default: '' })
+  leadListId: string;
 
-  @Column({ type: 'text' })
-  template: string;
+  @Column({ type: 'text', nullable: true })
+  inviteMessage: string;
 
-  @Column({ default: 'multichannel' })
+  @Column({ type: 'text', nullable: true })
+  followUpMessage: string;
+
+  @Column({ default: 'linkedin' })
   channel: 'email' | 'linkedin' | 'multichannel';
 
   @Column({ default: 0 })
   sentCount: number;
 
   @Column({ default: 0 })
-  openRate: number;
+  replyCount: number;
 
   @Column({ default: 0 })
-  replyRate: number;
-
-  @Column({ default: 0 })
-  meetingsRate: number;
+  meetingCount: number;
 
   @Column({ default: 'draft' })
-  status: 'draft' | 'active' | 'paused';
-
-  @Column({ type: 'jsonb', nullable: true })
-  steps: any[];
+  status: 'draft' | 'active' | 'paused' | 'completed';
 
   @CreateDateColumn()
   createdAt: Date;

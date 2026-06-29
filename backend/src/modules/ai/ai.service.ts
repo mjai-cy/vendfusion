@@ -5,7 +5,7 @@ export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly provider: string = process.env.AI_PROVIDER || 'gemini';
 
-  private buildPrompt(leadName: string, role: string, company: string, triggers: string[]): string {
+  private buildEmailPrompt(leadName: string, role: string, company: string, triggers: string[], companyDesc?: string): string {
     return `You are an expert B2B sales development representative. Write a personalized outreach email to a prospect.
 
 Prospect Details:
@@ -13,6 +13,7 @@ Prospect Details:
 - Role: ${role}
 - Company: ${company}
 - Triggers/Intent Signals: ${triggers.join(', ')}
+${companyDesc ? `- Our Company: ${companyDesc}` : ''}
 
 Write a concise, personalized email (subject + body) that:
 1. References the trigger signals to show relevance
@@ -23,7 +24,26 @@ Write a concise, personalized email (subject + body) that:
 Return the response in JSON format with "subject" and "body" fields. Keep the subject under 60 characters. Keep the body under 150 words.`;
   }
 
-  async generateOutreach(leadName: string, role: string, company: string, triggers: string[]): Promise<{ subject: string; body: string }> {
+  private buildLinkedInPrompt(leadName: string, role: string, company: string, triggers: string[], companyDesc?: string): string {
+    return `You are an expert B2B sales development representative. Write a personalized LinkedIn message/connection request to a prospect.
+
+Prospect Details:
+- Name: ${leadName}
+- Role: ${role}
+- Company: ${company}
+- Triggers/Intent Signals: ${triggers.join(', ')}
+${companyDesc ? `- Our Company: ${companyDesc}` : ''}
+
+Write a concise, personalized LinkedIn connection request message that:
+1. References the trigger signals to show relevance (e.g., "I saw your recent post about...")
+2. Is friendly and professional
+3. Mentions why you want to connect
+4. Under 300 characters (LinkedIn limit for connection requests)
+
+Return the response as a plain text string (the message only, no JSON).`;
+  }
+
+  private async tryCallAi(leadName: string, role: string, company: string, triggers: string[], promptBuilder: (...args: any[]) => string, companyDesc?: string): Promise<string> {
     const hasGemini = !!process.env.GEMINI_API_KEY;
     const hasClaude = !!process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your_anthropic_api_key_here';
     const hasOpenAI = !!process.env.OPENAI_API_KEY;
@@ -42,82 +62,80 @@ Return the response in JSON format with "subject" and "body" fields. Keep the su
     }
 
     const apiKeySet = hasGemini || hasClaude || hasOpenAI;
-    if (!apiKeySet) {
-      this.logger.warn(`No API keys found — returning mock for ${leadName}`);
-      return {
-        subject: `Quick question about ${company}'s ${role} strategy`,
-        body: `Hi ${leadName},\n\nNoticed ${company} has been ${triggers[0] || 'expanding recently'}.\n\nWe help ${role}s at companies like yours automate outbound and book more meetings without scaling headcount.\n\nWorth a 10-min chat to see if it's a fit?\n\nBest,\nXYZ Sales Agent`,
-      };
-    }
+    if (!apiKeySet) return '';
+
+    const prompt = promptBuilder(leadName, role, company, triggers, companyDesc);
 
     try {
       this.logger.log(`Calling ${activeProvider} API for ${leadName} at ${company}`);
 
       if (activeProvider === 'gemini') {
-        return await this.callGemini(leadName, role, company, triggers);
+        const { GoogleGenerativeAI } = require('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim();
       } else if (activeProvider === 'openai') {
-        return await this.callOpenAI(leadName, role, company, triggers);
+        const OpenAI = require('openai');
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+        });
+        return response.choices[0]?.message?.content?.trim() || '';
       } else if (activeProvider === 'claude') {
-        return await this.callClaude(leadName, role, company, triggers);
+        const Anthropic = require('@anthropic-ai/sdk');
+        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const response = await anthropic.messages.create({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 500,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        return response.content[0]?.text?.trim() || '';
       }
     } catch (err) {
-      this.logger.error(`AI call failed: ${err.message}. Falling back to mock.`);
+      this.logger.error(`AI call failed: ${err.message}.`);
+    }
+
+    return '';
+  }
+
+  async generateOutreach(leadName: string, role: string, company: string, triggers: string[], companyDescription?: string): Promise<{ subject: string; body: string }> {
+    const aiText = await this.tryCallAi(leadName, role, company, triggers, this.buildEmailPrompt, companyDescription);
+
+    if (aiText) {
+      try {
+        const json = JSON.parse(aiText);
+        return { subject: json.subject || '', body: json.body || '' };
+      } catch {
+        const subjectMatch = aiText.match(/"subject"\s*:\s*"([^"]+)"/);
+        const bodyMatch = aiText.match(/"body"\s*:\s*"([^"]+)"/);
+        if (subjectMatch || bodyMatch) {
+          return {
+            subject: subjectMatch ? subjectMatch[1] : 'Personalized outreach',
+            body: bodyMatch ? bodyMatch[1] : aiText,
+          };
+        }
+      }
     }
 
     return {
-      subject: `Optimizing ${role} workflows at ${company}`,
-      body: `Hi ${leadName},\n\nHope this finds you well. I generated this custom outreach draft based on recent triggers: ${triggers.join(', ')}.\n\nBest regards.`,
+      subject: `Quick question about ${company}'s ${role} strategy`,
+      body: `Hi ${leadName},\n\nNoticed ${company} has been ${triggers[0] || 'expanding recently'}.\n\nWe help ${role}s at companies like yours automate outbound and book more meetings without scaling headcount.\n\nWorth a 10-min chat to see if it's a fit?\n\nBest,\n[Your Name]`,
     };
   }
 
-  private async callGemini(leadName: string, role: string, company: string, triggers: string[]): Promise<{ subject: string; body: string }> {
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const prompt = this.buildPrompt(leadName, role, company, triggers);
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
-    return this.parseAiResponse(text);
-  }
+  async generateLinkedInMessage(leadName: string, role: string, company: string, triggers: string[], companyDescription?: string): Promise<{ message: string }> {
+    const aiText = await this.tryCallAi(leadName, role, company, triggers, this.buildLinkedInPrompt, companyDescription);
 
-  private async callOpenAI(leadName: string, role: string, company: string, triggers: string[]): Promise<{ subject: string; body: string }> {
-    const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const prompt = this.buildPrompt(leadName, role, company, triggers);
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    });
-    const text = response.choices[0]?.message?.content?.trim() || '';
-    return this.parseAiResponse(text);
-  }
-
-  private async callClaude(leadName: string, role: string, company: string, triggers: string[]): Promise<{ subject: string; body: string }> {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const prompt = this.buildPrompt(leadName, role, company, triggers);
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 500,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    const text = response.content[0]?.text?.trim() || '';
-    return this.parseAiResponse(text);
-  }
-
-  private parseAiResponse(text: string): { subject: string; body: string } {
-    try {
-      const json = JSON.parse(text);
-      return { subject: json.subject || '', body: json.body || '' };
-    } catch {
-      const subjectMatch = text.match(/"subject"\s*:\s*"([^"]+)"/);
-      const bodyMatch = text.match(/"body"\s*:\s*"([^"]+)"/);
-      return {
-        subject: subjectMatch ? subjectMatch[1] : 'Personalized outreach',
-        body: bodyMatch ? bodyMatch[1] : text,
-      };
+    if (aiText) {
+      return { message: aiText.substring(0, 300) };
     }
+
+    return {
+      message: `Hi ${leadName}, I saw your work at ${company} as ${role} and noticed ${triggers[0] || 'your recent activity in the space'}. Would love to connect and share ideas!`,
+    };
   }
 
   async runWeeklyOptimization(ratings: number[], performanceScore: number): Promise<{ learnings: string[]; proposals: string[] }> {
