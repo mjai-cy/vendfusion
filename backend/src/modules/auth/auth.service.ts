@@ -26,7 +26,7 @@ export class AuthService {
     });
   }
 
-  async sendOtp(email: string): Promise<{ success: boolean; message: string }> {
+  async sendOtp(email: string): Promise<{ success: boolean; message: string; mockOtp?: string }> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
     this.otpMap.set(email.toLowerCase(), { otp, expiresAt });
