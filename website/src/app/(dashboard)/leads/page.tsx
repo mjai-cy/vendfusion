@@ -339,75 +339,264 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {/* Contact Now Modal */}
+      {/* Contact Drawer Panel (Slides out from right) */}
       {contactNowLead && contactLead && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 pb-10 overflow-y-auto">
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setContactNowLead(null)} />
-          <div className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-dark-bg/95 backdrop-blur-xl shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                <h2 className="text-sm font-bold text-white">Contact Now</h2>
+        <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+          {/* Backdrop blur overlay */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setContactNowLead(null)}
+          />
+
+          {/* Drawer body container */}
+          <div className="relative w-full max-w-xl h-full bg-dark-bg/95 border-l border-white/10 shadow-2xl overflow-y-auto z-10 flex flex-col justify-between animate-slide-in">
+            
+            {/* Header section */}
+            <div className="px-6 py-5 border-b border-white/5 space-y-4">
+              <div className="flex items-start justify-between">
+                {/* Profile detail */}
+                <div className="flex gap-3">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent p-0.5 shrink-0">
+                    <div className="h-full w-full rounded-full bg-dark-bg flex items-center justify-center text-sm font-bold text-white">
+                      {contactLead.name.split(" ").map(n => n[0]).join("")}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-extrabold text-white leading-tight">{contactLead.name}</h2>
+                      <a href={contactLead.linkedinUrl} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">
+                        <Linkedin className="h-4 w-4" />
+                      </a>
+                    </div>
+                    <p className="text-xs text-gray-400 font-medium">
+                      {contactLead.role} @ <span className="text-gray-300">{contactLead.companyName}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Close button */}
+                <button 
+                  onClick={() => setContactNowLead(null)}
+                  className="p-1.5 rounded-lg border border-white/5 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button onClick={() => setContactNowLead(null)} className="p-1 text-gray-500 hover:text-white">
-                <X className="h-4 w-4" />
+
+              {/* Coordinates: Mail and Phone */}
+              <div className="flex flex-wrap gap-2 text-[10px]">
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(contactLead.email || "support@xyz.ai");
+                    alert("Email copied!");
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary font-bold hover:bg-primary/10 transition-colors"
+                >
+                  <Mail className="h-3 w-3" />
+                  {contactLead.email || "Click to Enrich"}
+                </button>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(contactLead.phone || "+1 555-019-2834");
+                    alert("Phone copied!");
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 transition-colors"
+                >
+                  <Globe className="h-3 w-3" />
+                  {contactLead.phone || "Find Phone"}
+                </button>
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-grow p-6 space-y-6">
+              
+              {/* Signal */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="w-1 h-3 bg-accent rounded-full inline-block" /> Signal
+                </h4>
+                <div className="rounded-xl border border-accent/10 bg-accent/5 p-4 text-xs text-gray-300 leading-relaxed font-sans flex items-start gap-2.5">
+                  <span className="text-base leading-none">⭐</span>
+                  <p>
+                    {contactLead.intentSignals[0] || `Just engaged with the industry expert ${contactLead.name}`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Personalized Email Message */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="w-1 h-3 bg-primary rounded-full inline-block" /> Personalized Email Message
+                </h4>
+
+                {generatingMessages.has(contactLead.id) ? (
+                  <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-8 flex flex-col items-center justify-center text-center gap-3">
+                    <RefreshCw className="h-6 w-6 text-primary animate-spin" />
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Generation in Progress</p>
+                      <p className="text-xs text-gray-400">Generating a context-aware AI message...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-white/5 bg-black/40 p-4 space-y-3 relative group">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-gray-400">Subject:</p>
+                      <p className="text-xs text-white font-semibold">
+                        {generatedMessages[`gen-${contactLead.id}`]?.emailSubject || `Quick question about ${contactLead.companyName}'s growth strategy`}
+                      </p>
+                    </div>
+                    <div className="border-t border-white/5 pt-2 space-y-1">
+                      <p className="text-[10px] font-bold text-gray-400">Body:</p>
+                      <p className="text-xs text-gray-300 whitespace-pre-line leading-relaxed font-sans">
+                        {generatedMessages[`gen-${contactLead.id}`]?.emailBody || `Hi ${contactLead.name.split(" ")[0]},\n\nI noticed you're the ${contactLead.role} at ${contactLead.companyName}.\n\nWe help companies automate outbound and book more meetings.\n\nWorth a 15-min chat?\n\nBest,\n[Your Name]`}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 border-t border-white/5 pt-2">
+                      <button 
+                        onClick={() => {
+                          const body = generatedMessages[`gen-${contactLead.id}`]?.emailBody || "";
+                          navigator.clipboard.writeText(body);
+                          alert("Email body copied to clipboard!");
+                        }}
+                        className="flex-grow h-8 rounded bg-primary/10 hover:bg-primary/20 border border-primary/25 text-[10px] font-bold text-primary transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        Copy Email Copy
+                      </button>
+                      <button 
+                        onClick={() => {
+                          handleSend(contactLead.id, "email");
+                          setContactNowLead(null);
+                        }}
+                        className="h-8 px-4 rounded bg-primary hover:bg-primary-hover text-[10px] font-bold text-white transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <Send className="h-3 w-3" /> Send
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Personalized LinkedIn Message */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="w-1 h-3 bg-blue-500 rounded-full inline-block" /> Personalized LinkedIn Message
+                </h4>
+
+                {generatingMessages.has(contactLead.id) ? (
+                  <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-8 flex flex-col items-center justify-center text-center gap-3">
+                    <RefreshCw className="h-6 w-6 text-blue-400 animate-spin" />
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Generation in Progress</p>
+                      <p className="text-xs text-gray-400">Crafting your LinkedIn message with AI...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-white/5 bg-black/40 p-4 space-y-3">
+                    <p className="text-xs text-gray-300 leading-relaxed font-sans">
+                      {generatedMessages[`gen-${contactLead.id}`]?.linkedin || `Hi ${contactLead.name.split(" ")[0]}, I saw your work at ${contactLead.companyName} — would love to connect!`}
+                    </p>
+                    <div className="flex gap-2 border-t border-white/5 pt-2">
+                      <button 
+                        onClick={() => {
+                          const liMsg = generatedMessages[`gen-${contactLead.id}`]?.linkedin || "";
+                          navigator.clipboard.writeText(liMsg);
+                          alert("LinkedIn message copied to clipboard!");
+                        }}
+                        className="flex-grow h-8 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-[10px] font-bold text-blue-400 transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        Copy Connection Request
+                      </button>
+                      <button 
+                        onClick={() => {
+                          handleSend(contactLead.id, "linkedin");
+                          setContactNowLead(null);
+                        }}
+                        className="h-8 px-4 rounded bg-blue-500 hover:bg-blue-600 text-[10px] font-bold text-white transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <Send className="h-3 w-3" /> Connect
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Basic Information */}
+              <div className="space-y-3 border-t border-white/5 pt-4">
+                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="w-1 h-3 bg-gray-500 rounded-full inline-block" /> Basic Information
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-xs rounded-xl border border-white/5 bg-black/20 p-4">
+                  <div className="space-y-1">
+                    <span className="text-gray-500 text-[10px]">Industry</span>
+                    <p className="text-white font-medium">Computer Software</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-gray-500 text-[10px]">Company URL</span>
+                    <a 
+                      href={`https://${contactLead.domain}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="text-primary hover:underline block truncate font-medium"
+                    >
+                      {contactLead.domain || "N/A"}
+                    </a>
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <span className="text-gray-500 text-[10px]">Created On</span>
+                    <p className="text-gray-300 font-medium">Sep 09, 2025 11:48 PM</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Sticky Footer */}
+            <div className="px-6 py-4 border-t border-white/5 bg-black/40 flex items-center justify-between gap-4">
+              {/* Fit options */}
+              <div className="flex items-center gap-1.5">
+                <button 
+                  onClick={() => {
+                    updateLeadStatus(contactLead.id, "replied");
+                    alert("Fit: Approved");
+                  }}
+                  className="h-8 w-8 rounded-lg bg-green-500/10 border border-green-500/25 text-green-400 flex items-center justify-center font-bold hover:bg-green-500/20 transition-colors"
+                  title="Fit"
+                >
+                  ✓
+                </button>
+                <button 
+                  onClick={() => {
+                    alert("Fit: Maybe");
+                  }}
+                  className="h-8 w-8 rounded-lg bg-yellow-500/10 border border-yellow-500/25 text-yellow-400 flex items-center justify-center font-bold hover:bg-yellow-500/20 transition-colors"
+                  title="Maybe"
+                >
+                  ?
+                </button>
+                <button 
+                  onClick={() => {
+                    updateLeadStatus(contactLead.id, "ignored");
+                    alert("Fit: Out of scope");
+                  }}
+                  className="h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400 flex items-center justify-center font-bold hover:bg-red-500/20 transition-colors"
+                  title="Out of scope"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Action Dropdown / Button */}
+              <button 
+                onClick={() => {
+                  alert("Export completed!");
+                }}
+                className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 text-gray-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                Export
               </button>
             </div>
 
-            <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-white/5 bg-black/30">
-                <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                  {contactLead.name.split(" ").map(n => n[0]).join("")}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white">{contactLead.name}</p>
-                  <p className="text-[10px] text-gray-400">{contactLead.role} @ {contactLead.companyName}</p>
-                </div>
-              </div>
-
-              {generatingMessages.has(contactLead.id) ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="h-5 w-5 text-primary animate-spin" />
-                  <span className="ml-2 text-xs text-gray-400">Generating AI messages...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <Linkedin className="h-4 w-4 text-blue-400" />
-                      <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">LinkedIn Message</h3>
-                    </div>
-                    <p className="text-[11px] text-gray-300 leading-relaxed bg-black/30 rounded p-2 border border-white/5">
-                      {generatedMessages[`gen-${contactLead.id}`]?.linkedin || `Hi ${contactLead.name.split(" ")[0]}, I saw your work at ${contactLead.companyName} — would love to connect!`}
-                    </p>
-                    <button
-                      onClick={() => { handleSend(contactLead.id, "linkedin"); setContactNowLead(null); }}
-                      disabled={contactLead.outreachStatus !== "new"}
-                      className="w-full h-8 rounded bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-[10px] font-bold text-blue-400 transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Send className="h-3 w-3" /> Send LinkedIn Message
-                    </button>
-                  </div>
-
-                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <Mail className="h-4 w-4 text-primary" />
-                      <h3 className="text-[10px] font-bold text-primary uppercase tracking-wider">Email Draft</h3>
-                    </div>
-                    <p className="text-[11px] text-gray-300 leading-relaxed bg-black/30 rounded p-2 border border-white/5 whitespace-pre-line">
-                      {generatedMessages[`gen-${contactLead.id}`]?.emailBody || `Hi ${contactLead.name.split(" ")[0]},\n\nI noticed you're the ${contactLead.role} at ${contactLead.companyName}. We help companies automate outbound and book more meetings.\n\nWorth a 15-min chat?\n\nBest,\n[Your Name]`}
-                    </p>
-                    <button
-                      onClick={() => { handleSend(contactLead.id, "email"); setContactNowLead(null); }}
-                      disabled={contactLead.outreachStatus !== "new"}
-                      className="w-full h-8 rounded bg-primary/20 hover:bg-primary/30 border border-primary/30 text-[10px] font-bold text-primary transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Send className="h-3 w-3" /> Send Email
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
         </div>
       )}
