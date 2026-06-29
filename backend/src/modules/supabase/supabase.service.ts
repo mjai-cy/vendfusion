@@ -1,10 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { OutreachService } from '../outreach/outreach.service';
+
+interface OtpMemory {
+  otp: string;
+  expiresAt: number;
+}
 
 @Injectable()
 export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
   private client: SupabaseClient | null = null;
+  private otpMap = new Map<string, OtpMemory>();
+
+  constructor(private readonly outreachService: OutreachService) {}
 
   private get supabase(): SupabaseClient {
     if (!this.client) {
@@ -18,37 +27,68 @@ export class SupabaseService {
     return this.client;
   }
 
-  // ─── Auth: Send OTP via Supabase magic link ───────────────────────────────
+  // ─── Auth: Send OTP via custom SMTP using credentials in .env ───────────────
   async sendOtp(email: string): Promise<{ success: boolean; message: string }> {
     try {
-      const { error } = await this.supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true },
-      });
-      if (error) throw error;
-      this.logger.log(`[Supabase] OTP sent to ${email}`);
+      const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes validity
+      this.otpMap.set(email.toLowerCase(), { otp, expiresAt });
+
+      const emailSubject = "Verify your xyz.ai account";
+      const emailBody = `
+        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #1a1a1a; background-color: #030303; color: #ffffff; border-radius: 8px;">
+          <h2 style="color: #6366f1; text-align: center; margin-bottom: 20px;">xyz.ai Security</h2>
+          <p style="font-size: 14px; color: #d1d5db;">Please use the following 6-digit verification code to complete your access to the platform:</p>
+          <div style="font-size: 28px; font-weight: bold; text-align: center; letter-spacing: 4px; padding: 15px; background-color: #0f0f18; border: 1px solid #2d2d3d; border-radius: 6px; margin: 25px 0; color: #6366f1;">
+            ${otp}
+          </div>
+          <p style="font-size: 11px; color: #6b7280; text-align: center;">This verification code is valid for the next 10 minutes. If you did not request this code, please ignore this email.</p>
+        </div>
+      `;
+
+      const mailSent = await this.outreachService.sendEmail(email, emailSubject, emailBody);
+      if (!mailSent) {
+        throw new Error('SMTP delivery failure');
+      }
+
+      this.logger.log(`[Supabase OTP Custom] Real verification email sent successfully to ${email}`);
       return { success: true, message: 'OTP sent to your email' };
     } catch (err: any) {
-      this.logger.error(`[Supabase] sendOtp failed: ${err.message}`);
+      this.logger.error(`[Supabase OTP Custom] sendOtp failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
 
-  // ─── Auth: Verify OTP token ───────────────────────────────────────────────
+  // ─── Auth: Verify Custom OTP token ─────────────────────────────────────────
   async verifyOtp(email: string, token: string): Promise<{ success: boolean; message: string; userId?: string }> {
-    try {
-      const { data, error } = await this.supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email',
-      });
-      if (error) throw error;
-      this.logger.log(`[Supabase] OTP verified for ${email}`);
-      return { success: true, message: 'Email verified', userId: data.user?.id };
-    } catch (err: any) {
-      this.logger.error(`[Supabase] verifyOtp failed: ${err.message}`);
-      return { success: false, message: err.message };
+    const key = email.toLowerCase();
+    const activeOtp = this.otpMap.get(key);
+
+    if (!activeOtp) {
+      this.logger.warn(`[Supabase OTP Custom] Verification failed: No active code for ${email}`);
+      return { success: false, message: 'No verification request active for this email' };
     }
+
+    if (Date.now() > activeOtp.expiresAt) {
+      this.otpMap.delete(key);
+      this.logger.warn(`[Supabase OTP Custom] Verification failed: Code expired for ${email}`);
+      return { success: false, message: 'Verification code has expired' };
+    }
+
+    if (activeOtp.otp !== token) {
+      this.logger.warn(`[Supabase OTP Custom] Verification failed: Invalid code for ${email}`);
+      return { success: false, message: 'Invalid verification code' };
+    }
+
+    // Success! Clear it and return success
+    this.otpMap.delete(key);
+    
+    // Auto-create or fetch user account in Supabase Database
+    const userId = `usr_${Date.now()}`;
+    await this.upsertUser(userId, email, email.split('@')[0]);
+
+    this.logger.log(`[Supabase OTP Custom] Real verification successful for ${email}`);
+    return { success: true, message: 'Email verified', userId };
   }
 
   // ─── DB: Upsert user profile ──────────────────────────────────────────────
