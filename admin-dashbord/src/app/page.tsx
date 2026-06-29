@@ -19,6 +19,8 @@ interface SupportTicket {
 }
 
 export default function SuperAdminPage() {
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+
   // XYZ.AI Owner Platform Settings State
   const [bankAccount, setBankAccount] = useState({
     holderName: "XYZ AI Technologies Private Limited",
@@ -42,7 +44,7 @@ export default function SuperAdminPage() {
 
   // Load config on mount
   useEffect(() => {
-    fetch("http://localhost:3002/payment/config")
+    fetch(`${BACKEND_URL}/payment/config`)
       .then(res => res.json())
       .then(data => {
         if (data) {
@@ -62,7 +64,7 @@ export default function SuperAdminPage() {
         }
       })
       .catch(err => console.log("Failed to fetch payment config:", err));
-  }, []);
+  }, [BACKEND_URL]);
 
   // Support Tickets State
   const [tickets, setTickets] = useState<SupportTicket[]>([
@@ -109,7 +111,7 @@ export default function SuperAdminPage() {
   const handleSaveBank = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingBank(true);
-    fetch("http://localhost:3002/payment/config", {
+    fetch(`${BACKEND_URL}/payment/config`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bankAccount)
@@ -128,7 +130,7 @@ export default function SuperAdminPage() {
   const handleSavePrefs = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingGateway(true); // Re-use loading state for save
-    fetch("http://localhost:3002/payment/config", {
+    fetch(`${BACKEND_URL}/payment/config`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(checkoutPrefs)
