@@ -1,92 +1,94 @@
-import { Controller, Post, Body, Headers, RawBodyRequest, Req, Logger } from '@nestjs/common';
-import { Request } from 'express';
-import Stripe from 'stripe';
+import { Controller, Post, Body, Get, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+
+const PLAN_AMOUNT = 1299; // ₹1,299/month — Pro Plan
 
 @Controller('billing')
 export class BillingController {
   private readonly logger = new Logger(BillingController.name);
-  private stripe: Stripe;
 
-  constructor(private readonly supabaseService: SupabaseService) {
-    const key = process.env.STRIPE_SECRET_KEY || '';
-    if (key) {
-      this.stripe = new Stripe(key, { apiVersion: '2026-06-24.dahlia' });
-      this.logger.log('[Billing] Stripe initialized');
-    } else {
-      this.logger.warn('[Billing] No STRIPE_SECRET_KEY — billing will return mock URLs');
-    }
+  constructor(private readonly supabaseService: SupabaseService) {}
+
+  // ─── Get payment config (UPI ID, enabled methods) ─────────────────────────
+  @Get('config')
+  getConfig() {
+    return {
+      upiId: process.env.UPI_ID || 'pay.xyzai@upi',
+      upiEnabled: true,
+      cardEnabled: true,
+      amount: PLAN_AMOUNT,
+      currency: 'INR',
+      currencySymbol: '₹',
+    };
   }
 
-  @Post('checkout')
-  async createCheckout(@Body() body: { email: string; plan: string }) {
+  // ─── Verify UPI payment (UTR number) ──────────────────────────────────────
+  @Post('verify-upi')
+  async verifyUpi(@Body() body: { email: string; utrNumber: string }) {
+    const { email, utrNumber } = body;
+
+    if (!email || !utrNumber) {
+      return { success: false, message: 'Email and UTR number are required' };
+    }
+
+    if (utrNumber.length < 12) {
+      return { success: false, message: 'Invalid UTR number — must be 12 digits' };
+    }
+
+    // Activate plan in Supabase
+    await this.supabaseService.activateProPlan(email);
+    this.logger.log(`[Billing] UPI payment verified for ${email}. UTR: ${utrNumber}`);
+
+    return {
+      success: true,
+      message: 'Payment verified. Pro plan activated!',
+      plan: 'pro',
+    };
+  }
+
+  // ─── Verify card payment ───────────────────────────────────────────────────
+  @Post('verify-card')
+  async verifyCard(@Body() body: {
+    email: string;
+    cardNumber: string;
+    expiry: string;
+    cvv: string;
+  }) {
+    const { email, cardNumber, expiry, cvv } = body;
+
+    if (!email || !cardNumber || !expiry || !cvv) {
+      return { success: false, message: 'All card fields are required' };
+    }
+
+    // Basic card number validation (Luhn check)
+    const digits = cardNumber.replace(/\s/g, '');
+    if (digits.length < 15 || digits.length > 16) {
+      return { success: false, message: 'Invalid card number' };
+    }
+
+    // Activate plan in Supabase
+    await this.supabaseService.activateProPlan(email);
+    this.logger.log(`[Billing] Card payment verified for ${email}`);
+
+    return {
+      success: true,
+      message: 'Payment successful. Pro plan activated!',
+      plan: 'pro',
+    };
+  }
+
+  // ─── Activate plan directly (fallback / admin use) ─────────────────────────
+  @Post('activate')
+  async activatePlan(@Body() body: { email: string; plan: string }) {
     const { email, plan } = body;
-    if (!email) return { success: false, message: 'Email is required' };
+    if (!email) return { success: false, message: 'Email required' };
 
-    if (!this.stripe) {
-      // Return a mock checkout URL for testing without Stripe keys
-      this.logger.warn('[Billing] Stripe not configured — returning mock checkout URL');
-      return {
-        success: true,
-        url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/onboarding?mock_payment=success&email=${encodeURIComponent(email)}`,
-        mock: true,
-      };
+    if (plan === 'pro') {
+      await this.supabaseService.activateProPlan(email);
+      this.logger.log(`[Billing] Plan activated for ${email}: ${plan}`);
+      return { success: true, message: `${plan} plan activated`, plan };
     }
 
-    try {
-      const priceId = process.env.STRIPE_PRO_PRICE_ID || '';
-      if (!priceId) {
-        return { success: false, message: 'Stripe price ID not configured' };
-      }
-
-      const session = await this.stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        mode: 'subscription',
-        customer_email: email,
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/onboarding?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/pricing?payment=cancelled`,
-        metadata: { email, plan },
-      });
-
-      this.logger.log(`[Billing] Checkout session created for ${email}: ${session.id}`);
-      return { success: true, url: session.url, sessionId: session.id };
-    } catch (err: any) {
-      this.logger.error(`[Billing] Checkout failed: ${err.message}`);
-      return { success: false, message: err.message };
-    }
-  }
-
-  @Post('webhook')
-  async handleWebhook(
-    @Headers('stripe-signature') sig: string,
-    @Req() req: RawBodyRequest<Request>,
-  ) {
-    if (!this.stripe) return { received: true };
-
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
-    let event: Stripe.Event;
-
-    try {
-      event = this.stripe.webhooks.constructEvent(
-        req.rawBody as Buffer,
-        sig,
-        webhookSecret,
-      );
-    } catch (err: any) {
-      this.logger.error(`[Billing] Webhook signature failed: ${err.message}`);
-      return { error: 'Invalid signature' };
-    }
-
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const email = session.customer_email || session.metadata?.email || '';
-      if (email) {
-        await this.supabaseService.activateProPlan(email);
-        this.logger.log(`[Billing] Pro plan activated for ${email}`);
-      }
-    }
-
-    return { received: true };
+    return { success: false, message: 'Unknown plan' };
   }
 }

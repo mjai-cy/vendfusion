@@ -603,8 +603,9 @@ export default function Home() {
               <div className="space-y-6">
                 <div>
                   <span className="text-xl font-bold text-white">Pro</span>
-                  <div className="flex items-baseline mt-2">
-                    <span className="text-4xl font-extrabold text-white">$99</span>
+                  <div className="flex items-baseline mt-2 gap-1">
+                    <span className="text-2xl font-bold text-gray-400">₹</span>
+                    <span className="text-4xl font-extrabold text-white">1,299</span>
                     <span className="ml-1 text-sm text-gray-500">/month</span>
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Your first AI sales rep. For founders and operators running their own outbound.</p>

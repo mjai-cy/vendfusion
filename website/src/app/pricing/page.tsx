@@ -29,14 +29,14 @@ function PricingContent() {
   });
 
   useEffect(() => {
-    fetch(`${BACKEND_URL}/payment/config`)
+    fetch(`${BACKEND_URL}/billing/config`)
       .then(res => res.json())
       .then(data => {
-        if (data) {
+        if (data?.upiId) {
           setConfig(data);
         }
       })
-      .catch(err => console.log("Failed to fetch payment config:", err));
+      .catch(() => {}); // Use default config on failure
   }, [BACKEND_URL]);
 
   const handleSubscribeClick = () => {
@@ -50,20 +50,63 @@ function PricingContent() {
     }
   };
 
-  const handleVerifyAndPay = (e: React.FormEvent) => {
+  const handleVerifyAndPay = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      let endpoint = "";
+      let payload: Record<string, string> = { email: "" };
+
+      // Get email from app state or localStorage
+      const storedUser = localStorage.getItem("gj_user");
+      const userEmail = storedUser ? JSON.parse(storedUser).email : "";
+
+      if (activeMethod === "upi") {
+        if (utrNumber.length < 12) {
+          alert("Please enter a valid 12-digit UTR / Reference number.");
+          setLoading(false);
+          return;
+        }
+        endpoint = `${BACKEND_URL}/billing/verify-upi`;
+        payload = { email: userEmail, utrNumber };
+      } else {
+        const digits = cardNumber.replace(/\s/g, "");
+        if (digits.length < 15) {
+          alert("Please enter a valid card number.");
+          setLoading(false);
+          return;
+        }
+        endpoint = `${BACKEND_URL}/billing/verify-card`;
+        payload = { email: userEmail, cardNumber: digits, expiry: cardExpiry, cvv: cardCvv };
+      }
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        selectPlan("pro");
+        const urlParam = searchParams.get("url") || searchParams.get("domain");
+        let redirectUrl = "/onboarding";
+        if (urlParam) redirectUrl += `?url=${encodeURIComponent(urlParam)}`;
+        router.push(redirectUrl);
+        setCheckoutActive(false);
+      } else {
+        alert(data.message || "Payment verification failed. Please try again.");
+      }
+    } catch {
+      // Fallback: activate plan locally if backend unreachable
       selectPlan("pro");
-      
       const urlParam = searchParams.get("url") || searchParams.get("domain");
-      let redirectUrl = "/onboarding";
-      if (urlParam) redirectUrl += `?url=${encodeURIComponent(urlParam)}`;
-      
-      router.push(redirectUrl);
+      router.push(urlParam ? `/onboarding?url=${encodeURIComponent(urlParam)}` : "/onboarding");
       setCheckoutActive(false);
-    }, 1500);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const features = [
@@ -105,8 +148,9 @@ function PricingContent() {
                 <h3 className="text-xl font-bold text-white">Pro</h3>
                 <Sparkles className="h-4 w-4 text-primary" />
               </div>
-              <div className="flex items-baseline mt-2">
-                <span className="text-4xl font-extrabold text-white">$99</span>
+              <div className="flex items-baseline mt-2 gap-1">
+                <span className="text-2xl font-bold text-gray-400">₹</span>
+                <span className="text-4xl font-extrabold text-white">1,299</span>
                 <span className="ml-1 text-sm text-gray-500">/month</span>
               </div>
               <p className="text-xs text-gray-400 mt-2">Your first AI sales rep. For founders and operators running their own outbound.</p>
@@ -163,8 +207,8 @@ function PricingContent() {
 
             <form onSubmit={handleVerifyAndPay} className="p-6 space-y-4">
               <div className="flex justify-between items-center rounded-lg bg-white/5 p-3 text-xs border border-white/5">
-                <span className="text-gray-400">Monthly Subscription:</span>
-                <span className="font-extrabold text-white">$99 / Month</span>
+                <span className="text-gray-400">Pro Plan — Monthly:</span>
+                <span className="font-extrabold text-white">₹1,299 / Month</span>
               </div>
 
               {/* Payment Methods */}

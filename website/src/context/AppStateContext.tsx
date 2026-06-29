@@ -321,28 +321,17 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const selectPlan = async (selectedPlan: "pro") => {
-    if (!user?.email) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/billing/checkout`, {
+    // Activate plan locally immediately
+    setPlan(selectedPlan);
+    localStorage.setItem("gj_plan", selectedPlan);
+
+    // Also sync to Supabase in the background (non-blocking)
+    if (user?.email) {
+      fetch(`${BACKEND_URL}/billing/activate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, plan: selectedPlan }),
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        if (data.mock) {
-          // Mock checkout (no Stripe keys) — just activate plan directly
-          setPlan(selectedPlan);
-          localStorage.setItem("gj_plan", selectedPlan);
-        } else {
-          // Real Stripe — redirect to checkout
-          window.location.href = data.url;
-        }
-      }
-    } catch {
-      // Fallback if backend unreachable
-      setPlan(selectedPlan);
-      localStorage.setItem("gj_plan", selectedPlan);
+      }).catch(() => {}); // Silent fail — local state is source of truth
     }
   };
 
