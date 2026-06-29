@@ -10,30 +10,73 @@ function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAppState();
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) return;
 
     setLoading(true);
-    setTimeout(() => {
-      login(email, name);
+    setErrorMsg("");
+    try {
+      const res = await fetch(`${BACKEND_URL}/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOtpSent(true);
+      } else {
+        setErrorMsg(data.message || "Failed to send OTP verification email");
+      }
+    } catch (err) {
+      setErrorMsg("Network connection error. Is the backend service online?");
+    } finally {
       setLoading(false);
-      
-      const planParam = searchParams.get("plan");
-      const urlParam = searchParams.get("url") || searchParams.get("domain");
-      
-      let redirectUrl = "/onboarding?step=1";
-      if (planParam) redirectUrl += `&plan=${planParam}`;
-      if (urlParam) redirectUrl += `&url=${encodeURIComponent(urlParam)}`;
-      
-      router.push(redirectUrl);
-    }, 1200);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode) return;
+
+    setLoading(true);
+    setErrorMsg("");
+    try {
+      const res = await fetch(`${BACKEND_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: otpCode }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        login(email, name);
+        
+        const planParam = searchParams.get("plan");
+        const urlParam = searchParams.get("url") || searchParams.get("domain");
+        
+        let redirectUrl = "/onboarding?step=1";
+        if (planParam) redirectUrl += `&plan=${planParam}`;
+        if (urlParam) redirectUrl += `&url=${encodeURIComponent(urlParam)}`;
+        
+        router.push(redirectUrl);
+      } else {
+        setErrorMsg(data.message || "Invalid OTP code entered");
+      }
+    } catch (err) {
+      setErrorMsg("Failed to verify OTP code. Connection error.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,69 +128,123 @@ function SignupForm() {
 
       {/* Form Area - Right */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8 md:p-16">
-        <div className="w-full max-w-sm space-y-8">
+        <div className="w-full max-w-sm space-y-8 animate-fade-in">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Create an account</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              {otpSent ? "Verify your email" : "Create an account"}
+            </h1>
             <p className="text-xs text-gray-400">
-              Sign up in under 2 minutes. No credit card required.
+              {otpSent 
+                ? `We've sent a 6-digit verification code to ${email}`
+                : "Sign up in under 2 minutes. No credit card required."
+              }
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Full Name</label>
-              <input
-                type="text"
-                placeholder="Jane Doe"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
-              />
+          {errorMsg && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-400">
+              {errorMsg}
             </div>
+          )}
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Work Email</label>
-              <input
-                type="email"
-                placeholder="jane@company.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
-              />
-            </div>
+          {!otpSent ? (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Full Name</label>
+                <input
+                  type="text"
+                  placeholder="Jane Doe"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
-              />
-            </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Work Email</label>
+                <input
+                  type="email"
+                  placeholder="jane@company.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-10 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all gap-1.5"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating workspace...
-                </>
-              ) : (
-                <>
-                  Get Started
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
-          </form>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-10 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all gap-1.5"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending OTP code...
+                  </>
+                ) : (
+                  <>
+                    Sign Up
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Verification OTP Code</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="123456"
+                  required
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                  className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary text-center font-mono text-lg tracking-widest transition-colors"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-10 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all gap-1.5"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Verifying OTP code...
+                  </>
+                ) : (
+                  <>
+                    Verify & Continue
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOtpSent(false)}
+                className="w-full text-center text-xs text-gray-500 hover:text-gray-400 pt-1"
+              >
+                Back to registration details
+              </button>
+            </form>
+          )}
 
           <p className="text-center text-xs text-gray-500">
             Already have an account?{" "}

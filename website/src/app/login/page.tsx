@@ -10,93 +10,190 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isEmailVerified, plan } = useAppState();
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
 
     setLoading(true);
-    setTimeout(() => {
-      login(email, "Jane Doe");
-      setLoading(false);
-
-      const urlParam = searchParams.get("url") || searchParams.get("domain");
-
-      // Routing logic depending on onboarding state
-      if (!isEmailVerified) {
-        router.push(urlParam ? `/onboarding?step=1&url=${encodeURIComponent(urlParam)}` : "/onboarding?step=1");
-      } else if (plan === "none") {
-        router.push(urlParam ? `/onboarding?step=2&url=${encodeURIComponent(urlParam)}` : "/onboarding?step=2");
+    setErrorMsg("");
+    try {
+      const res = await fetch(`${BACKEND_URL}/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOtpSent(true);
       } else {
-        // If they enter a new URL, we route directly to onboarding step 3 (Scan) even if they had a plan!
-        if (urlParam) {
-          router.push(`/onboarding?step=3&url=${encodeURIComponent(urlParam)}`);
-        } else {
-          window.location.href = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:3001";
-        }
+        setErrorMsg(data.message || "Failed to send login OTP verification email");
       }
-    }, 1000);
+    } catch (err) {
+      setErrorMsg("Network connection error. Is the backend service online?");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode) return;
+
+    setLoading(true);
+    setErrorMsg("");
+    try {
+      const res = await fetch(`${BACKEND_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: otpCode }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        login(email, "Jane Doe");
+        
+        const urlParam = searchParams.get("url") || searchParams.get("domain");
+
+        // Routing logic depending on onboarding state
+        if (!isEmailVerified) {
+          router.push(urlParam ? `/onboarding?step=1&url=${encodeURIComponent(urlParam)}` : "/onboarding?step=1");
+        } else if (plan === "none") {
+          router.push(urlParam ? `/onboarding?step=2&url=${encodeURIComponent(urlParam)}` : "/onboarding?step=2");
+        } else {
+          // If they enter a new URL, we route directly to onboarding step 3 (Scan) even if they had a plan!
+          if (urlParam) {
+            router.push(`/onboarding?step=3&url=${encodeURIComponent(urlParam)}`);
+          } else {
+            window.location.href = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:3001";
+          }
+        }
+      } else {
+        setErrorMsg(data.message || "Invalid OTP code entered");
+      }
+    } catch (err) {
+      setErrorMsg("Failed to verify OTP code. Connection error.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="w-full max-w-sm space-y-8">
+    <div className="w-full max-w-sm space-y-8 animate-fade-in">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Welcome back</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">
+          {otpSent ? "Verify your identity" : "Welcome back"}
+        </h1>
         <p className="text-xs text-gray-400">
-          Sign in to manage your AI revenue campaigns.
+          {otpSent 
+            ? `We've sent a 6-digit verification code to ${email}`
+            : "Sign in to manage your AI revenue campaigns."
+          }
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Work Email</label>
-          <input
-            type="email"
-            placeholder="jane@company.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
-          />
+      {errorMsg && (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-400">
+          {errorMsg}
         </div>
+      )}
 
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between">
-            <span>Password</span>
-            <a href="#" className="text-primary hover:underline text-[9px] font-normal lowercase tracking-normal">Forgot password?</a>
-          </label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
-          />
-        </div>
+      {!otpSent ? (
+        <form onSubmit={handleSendOtp} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Work Email</label>
+            <input
+              type="email"
+              placeholder="jane@company.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full h-10 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all gap-1.5"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Authenticating...
-            </>
-          ) : (
-            <>
-              Log In
-              <ArrowRight className="h-4 w-4" />
-            </>
-          )}
-        </button>
-      </form>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between">
+              <span>Password</span>
+              <a href="#" className="text-primary hover:underline text-[9px] font-normal lowercase tracking-normal">Forgot password?</a>
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-10 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all gap-1.5"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Sending OTP code...
+              </>
+            ) : (
+              <>
+                Log In
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Verification OTP Code</label>
+            <input
+              type="text"
+              maxLength={6}
+              placeholder="123456"
+              required
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+              className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary text-center font-mono text-lg tracking-widest transition-colors"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-10 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all gap-1.5"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Verifying OTP code...
+              </>
+            ) : (
+              <>
+                Verify & Log In
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setOtpSent(false)}
+            className="w-full text-center text-xs text-gray-500 hover:text-gray-400 pt-1"
+          >
+            Back to login details
+          </button>
+        </form>
+      )}
 
       <p className="text-center text-xs text-gray-500">
         Don't have an account yet?{" "}
