@@ -282,140 +282,63 @@ export default function SuperAdminPage() {
 
       {/* SETTINGS VIEW (PAYMENTS & CONTACT) */}
       {activeTab === "settings" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="max-w-2xl mx-auto space-y-6">
           
-          {/* Bank Account Settings */}
-          <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-6 space-y-5">
+          {/* Direct Checkout preferences & switches */}
+          <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-6 space-y-4">
             <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5 border-b border-white/5 pb-3">
-              <Building2 className="h-4 w-4 text-primary" /> Bank Account to Receive Income
+              <Settings className="h-4 w-4 text-primary" /> Direct Checkout Preferences
             </h3>
 
-            <form onSubmit={handleSaveBank} className="space-y-4">
+            <form onSubmit={handleSavePrefs} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Account Holder Name</label>
-                <input
-                  value={bankAccount.holderName}
-                  onChange={(e) => setBankAccount({ ...bankAccount, holderName: e.target.value })}
-                  className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Account Number</label>
+                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Checkout UPI ID</label>
+                <div className="relative flex items-center">
+                  <Smartphone className="absolute left-3 h-4 w-4 text-gray-500" />
                   <input
-                    value={bankAccount.accountNumber}
-                    onChange={(e) => setBankAccount({ ...bankAccount, accountNumber: e.target.value })}
-                    className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">IFSC Code</label>
-                  <input
-                    value={bankAccount.ifscCode}
-                    onChange={(e) => setBankAccount({ ...bankAccount, ifscCode: e.target.value })}
-                    className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white"
+                    type="text"
+                    value={checkoutPrefs.upiId}
+                    onChange={(e) => setCheckoutPrefs({ ...checkoutPrefs, upiId: e.target.value })}
+                    placeholder="pay.xyz@upi"
+                    className="w-full h-9 rounded-lg border border-white/10 bg-white/5 pl-10 pr-3 text-xs text-white"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Bank Name</label>
+              <div className="space-y-2 border-t border-white/5 pt-3">
+                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block mb-2">Enable Payment Methods</label>
+                
+                <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
                   <input
-                    value={bankAccount.bankName}
-                    onChange={(e) => setBankAccount({ ...bankAccount, bankName: e.target.value })}
-                    className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white"
+                    type="checkbox"
+                    checked={checkoutPrefs.upiEnabled}
+                    onChange={(e) => setCheckoutPrefs({ ...checkoutPrefs, upiEnabled: e.target.checked })}
+                    className="rounded border-white/10 bg-white/5 text-primary focus:ring-0"
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">UPI ID / Virtual Address</label>
+                  <span>Direct UPI QR Code Scan</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
                   <input
-                    value={bankAccount.upiId}
-                    onChange={(e) => setBankAccount({ ...bankAccount, upiId: e.target.value })}
-                    className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white"
+                    type="checkbox"
+                    checked={checkoutPrefs.cardEnabled}
+                    onChange={(e) => setCheckoutPrefs({ ...checkoutPrefs, cardEnabled: e.target.checked })}
+                    className="rounded border-white/10 bg-white/5 text-primary focus:ring-0"
                   />
-                </div>
+                  <span>Direct Credit/Debit Card Checkout</span>
+                </label>
               </div>
 
               <button
                 type="submit"
-                disabled={isSavingBank}
+                disabled={isSavingGateway}
                 className="w-full inline-flex h-9 items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-xs font-semibold text-white shadow-lg transition-colors gap-1.5"
               >
-                {isSavingBank ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                Save Bank Configurations
+                {isSavingGateway ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Save Checkout Preferences
               </button>
             </form>
           </div>
-
-          <div className="space-y-6">
-            
-            {/* Direct Checkout preferences & switches */}
-            <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-6 space-y-4">
-              <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5 border-b border-white/5 pb-3">
-                <Settings className="h-4 w-4 text-primary" /> Direct Checkout Preferences
-              </h3>
-
-              <form onSubmit={handleSavePrefs} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Checkout UPI ID</label>
-                  <div className="relative flex items-center">
-                    <Smartphone className="absolute left-3 h-4 w-4 text-gray-500" />
-                    <input
-                      type="text"
-                      value={checkoutPrefs.upiId}
-                      onChange={(e) => setCheckoutPrefs({ ...checkoutPrefs, upiId: e.target.value })}
-                      placeholder="pay.xyz@upi"
-                      className="w-full h-9 rounded-lg border border-white/10 bg-white/5 pl-10 pr-3 text-xs text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 border-t border-white/5 pt-3">
-                  <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block mb-2">Enable Payment Methods</label>
-                  
-                  <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={checkoutPrefs.upiEnabled}
-                      onChange={(e) => setCheckoutPrefs({ ...checkoutPrefs, upiEnabled: e.target.checked })}
-                      className="rounded border-white/10 bg-white/5 text-primary focus:ring-0"
-                    />
-                    <span>Direct UPI QR Code Scan</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={checkoutPrefs.bankEnabled}
-                      onChange={(e) => setCheckoutPrefs({ ...checkoutPrefs, bankEnabled: e.target.checked })}
-                      className="rounded border-white/10 bg-white/5 text-primary focus:ring-0"
-                    />
-                    <span>Direct Bank IMPS Transfer</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={checkoutPrefs.cardEnabled}
-                      onChange={(e) => setCheckoutPrefs({ ...checkoutPrefs, cardEnabled: e.target.checked })}
-                      className="rounded border-white/10 bg-white/5 text-primary focus:ring-0"
-                    />
-                    <span>Direct Credit/Debit Card Checkout</span>
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSavingGateway}
-                  className="w-full inline-flex h-9 items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-xs font-semibold text-white shadow-lg transition-colors gap-1.5"
-                >
-                  {isSavingGateway ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                  Save Checkout Preferences
-                </button>
-              </form>
-            </div>
 
             {/* Support Coordination settings */}
             <div className="rounded-xl border border-white/5 bg-dark-bg/40 glass-panel p-6 space-y-4">
@@ -453,9 +376,6 @@ export default function SuperAdminPage() {
                 </button>
               </form>
             </div>
-
-          </div>
-
         </div>
       )}
 

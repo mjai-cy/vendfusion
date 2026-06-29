@@ -15,18 +15,14 @@ export default function PricingPage() {
   const [paymentStep, setPaymentStep] = useState<"gateway" | "processing" | "success">("gateway");
   
   // Custom Fee-Free Payment states & configs from backend
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
   const [config, setConfig] = useState({
     upiId: "pay.xyz@upi",
     upiEnabled: true,
-    bankEnabled: true,
     cardEnabled: true,
-    holderName: "XYZ AI Technologies Private Limited",
-    accountNumber: "50200084729103",
-    ifscCode: "HDFC0000012",
-    bankName: "HDFC Bank Ltd",
   });
 
-  const [activeMethod, setActiveMethod] = useState<"upi" | "bank" | "card">("upi");
+  const [activeMethod, setActiveMethod] = useState<"upi" | "card">("upi");
   const [utrNumber, setUtrNumber] = useState("");
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [cardNumber, setCardNumber] = useState("");
@@ -34,22 +30,20 @@ export default function PricingPage() {
   const [cardCvv, setCardCvv] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3002/payment/config")
+    fetch(`${BACKEND_URL}/payment/config`)
       .then(res => res.json())
       .then(data => {
         if (data) {
           setConfig(data);
           if (data.upiEnabled !== false) {
             setActiveMethod("upi");
-          } else if (data.bankEnabled !== false) {
-            setActiveMethod("bank");
           } else if (data.cardEnabled !== false) {
             setActiveMethod("card");
           }
         }
       })
-      .catch(err => console.log("Failed to load payment config:", err));
-  }, []);
+      .catch(err => console.log("Failed to fetch payment config:", err));
+  }, [BACKEND_URL]);
 
   const handleSelectPlan = (tier: "starter" | "pro") => {
     setSelectedTier(tier);
@@ -252,7 +246,7 @@ export default function PricingPage() {
                   </div>
                 </div>
                                {/* Payment Methods tabs (displays only if enabled by Super Admin) */}
-                <div className="grid grid-cols-3 gap-1.5 p-1 rounded-lg bg-black/45 border border-white/5">
+                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-black/45 border border-white/5">
                   <button
                     onClick={() => setActiveMethod("upi")}
                     disabled={config.upiEnabled === false}
@@ -261,15 +255,6 @@ export default function PricingPage() {
                     }`}
                   >
                     <Smartphone className="h-3 w-3" /> UPI QR
-                  </button>
-                  <button
-                    onClick={() => setActiveMethod("bank")}
-                    disabled={config.bankEnabled === false}
-                    className={`h-8 rounded text-[10px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-20 disabled:cursor-not-allowed ${
-                      activeMethod === "bank" ? "bg-primary text-white" : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    <Building2 className="h-3 w-3" /> Bank
                   </button>
                   <button
                     onClick={() => setActiveMethod("card")}
@@ -336,50 +321,7 @@ export default function PricingPage() {
                   </div>
                 )}
 
-                {/* Tab content: Bank */}
-                {activeMethod === "bank" && config.bankEnabled !== false && (
-                  <div className="space-y-3.5">
-                    
-                    <div className="rounded-lg border border-white/5 bg-black/20 p-3 space-y-2 text-xs">
-                      <div className="flex justify-between border-b border-white/5 pb-1.5">
-                        <span className="text-gray-500">Account Holder:</span>
-                        <span className="font-bold text-white text-right">{config.holderName}</span>
-                      </div>
-                      <div className="flex justify-between items-center border-b border-white/5 pb-1.5">
-                        <span className="text-gray-500">Account Number:</span>
-                        <div className="flex items-center gap-1">
-                          <span className="font-bold text-white font-mono">{config.accountNumber}</span>
-                          <button onClick={() => copyToClipboard(config.accountNumber)} className="text-primary hover:underline"><Copy className="h-3 w-3" /></button>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center border-b border-white/5 pb-1.5">
-                        <span className="text-gray-500">Bank Name & Branch:</span>
-                        <span className="font-bold text-white">{config.bankName}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500">IFSC Code:</span>
-                        <div className="flex items-center gap-1">
-                          <span className="font-bold text-white font-mono">{config.ifscCode}</span>
-                          <button onClick={() => copyToClipboard(config.ifscCode)} className="text-primary hover:underline"><Copy className="h-3.5 w-3.5" /></button>
-                        </div>
-                      </div>
-                    </div>
 
-                    {copiedUpi && <p className="text-[9px] text-center text-secondary font-bold">Account parameter copied!</p>}
-
-                    {/* UTR Input */}
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block font-sans">Enter Bank Transaction Ref No.</label>
-                      <input
-                        type="text"
-                        placeholder="UTR / Ref ID"
-                        value={utrNumber}
-                        onChange={(e) => setUtrNumber(e.target.value)}
-                        className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white text-center font-mono"
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Tab content: Card */}
                 {activeMethod === "card" && (
