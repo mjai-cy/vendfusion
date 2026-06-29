@@ -15,7 +15,7 @@ export default function AgentsPage() {
   const [showWizard, setShowWizard] = useState(false);
   const [agentType, setAgentType] = useState<"autopilot" | "onetime" | null>(null);
   const [step, setStep] = useState<WizardStep>("type");
-  const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
+  const [expandedDetail, setExpandedDetail] = useState<{ agentId: string; tab: "overview" | "logs" } | null>(null);
 
   const [icpForm, setIcpForm] = useState({
     jobTitles: "Founder, CEO, Head of Sales, CMO",
@@ -214,6 +214,21 @@ export default function AgentsPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
+                    onClick={() => setExpandedDetail(
+                      expandedDetail?.agentId === agent.id && expandedDetail?.tab === "logs"
+                        ? null
+                        : { agentId: agent.id, tab: "logs" }
+                    )}
+                    className={`p-2 rounded-lg border transition-colors ${
+                      expandedDetail?.agentId === agent.id && expandedDetail?.tab === "logs"
+                        ? "bg-primary/15 border-primary/30 text-primary"
+                        : "border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white"
+                    }`}
+                    title="Launch Logs"
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={() => updateAgent(agent.id, { status: agent.status === "active" ? "paused" : "active" })}
                     className="p-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
                     title={agent.status === "active" ? "Pause" : "Activate"}
@@ -228,10 +243,14 @@ export default function AgentsPage() {
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => setExpandedAgent(expandedAgent === agent.id ? null : agent.id)}
+                    onClick={() => setExpandedDetail(
+                      expandedDetail?.agentId === agent.id && expandedDetail?.tab === "overview"
+                        ? null
+                        : { agentId: agent.id, tab: "overview" }
+                    )}
                     className="p-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
                   >
-                    <ChevronRight className={`h-3.5 w-3.5 transition-transform ${expandedAgent === agent.id ? "rotate-90" : ""}`} />
+                    <ChevronRight className={`h-3.5 w-3.5 transition-transform ${expandedDetail?.agentId === agent.id ? "rotate-90" : ""}`} />
                   </button>
                 </div>
               </div>
@@ -253,8 +272,8 @@ export default function AgentsPage() {
                 </div>
               )}
 
-              {expandedAgent === agent.id && (
-                <AgentDetail agent={agent} />
+              {expandedDetail?.agentId === agent.id && (
+                <AgentDetail key={`${agent.id}-${expandedDetail.tab}`} agent={agent} initialTab={expandedDetail.tab} />
               )}
             </div>
           ))}
@@ -698,8 +717,8 @@ export default function AgentsPage() {
   );
 }
 
-function AgentDetail({ agent }: { agent: AIAgent }) {
-  const [detailTab, setDetailTab] = useState<"overview" | "logs">("overview");
+function AgentDetail({ agent, initialTab }: { agent: AIAgent; initialTab?: "overview" | "logs" }) {
+  const [detailTab, setDetailTab] = useState<"overview" | "logs">(initialTab || "overview");
   return (
     <div className="border-t border-white/5 bg-black/20">
       <div className="flex items-center gap-1 px-4 border-b border-white/5">
