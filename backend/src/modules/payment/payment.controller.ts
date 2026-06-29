@@ -6,12 +6,12 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Get('config')
-  getConfig(): PaymentConfig {
+  async getConfig(): Promise<PaymentConfig> {
     return this.paymentService.getConfig();
   }
 
   @Post('config')
-  updateConfig(@Body() newConfig: Partial<PaymentConfig>): PaymentConfig {
+  async updateConfig(@Body() newConfig: Partial<PaymentConfig>): Promise<PaymentConfig> {
     return this.paymentService.updateConfig(newConfig);
   }
 }

@@ -1,6 +1,6 @@
 import { Module, Global, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User, Workspace, Lead, Campaign, Visitor, UploadedFile } from '../entities';
+import { User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting } from '../entities';
 
 function getDatabaseConfig() {
   const url = process.env.DATABASE_URL || process.env.SUPABASE_URL;
@@ -10,7 +10,7 @@ function getDatabaseConfig() {
     return null;
   }
 
-  const isSupabase = url.includes('supabase.co');
+  const isSupabase = url.includes('supabase.co') || url.includes('supabase.com');
 
   if (isSupabase) {
     const anonKey = process.env.SUPABASE_ANON_KEY || '';
@@ -19,7 +19,7 @@ function getDatabaseConfig() {
       type: 'postgres' as const,
       url: dbUrl,
       ssl: { rejectUnauthorized: false },
-      entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile],
+      entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting],
       synchronize: true,
       logging: false,
       extra: {
@@ -33,7 +33,7 @@ function getDatabaseConfig() {
     type: 'postgres' as const,
     url,
     ssl: { rejectUnauthorized: false },
-    entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile],
+    entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting],
     synchronize: true,
     logging: false,
   };
@@ -43,7 +43,7 @@ function getDatabaseConfig() {
 @Module({
   imports: [
     ...(getDatabaseConfig() ? [TypeOrmModule.forRoot(getDatabaseConfig())] : []),
-    TypeOrmModule.forFeature([User, Workspace, Lead, Campaign, Visitor, UploadedFile]),
+    TypeOrmModule.forFeature([User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting]),
   ],
   exports: [TypeOrmModule],
 })
