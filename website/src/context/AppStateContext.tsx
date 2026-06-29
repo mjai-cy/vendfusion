@@ -420,16 +420,15 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createAgent = async (agent: AIAgent) => {
+    updateActiveWorkspace(ws => ({
+      ...ws,
+      agents: [...(ws.agents || []), agent],
+    }));
     const data = await apiCall('/agents', 'POST', { ...agent, workspaceId: activeWorkspaceId });
-    if (data) {
+    if (data && data.id !== agent.id) {
       updateActiveWorkspace(ws => ({
         ...ws,
-        agents: [...(ws.agents || []), data],
-      }));
-    } else {
-      updateActiveWorkspace(ws => ({
-        ...ws,
-        agents: [...(ws.agents || []), agent],
+        agents: (ws.agents || []).map(a => a.id === agent.id ? { ...a, id: data.id } : a),
       }));
     }
   };
@@ -458,16 +457,15 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createCampaign = async (campaign: Campaign) => {
+    updateActiveWorkspace(ws => ({
+      ...ws,
+      campaigns: [...(ws.campaigns || []), campaign],
+    }));
     const data = await apiCall('/campaigns', 'POST', { ...campaign, workspaceId: activeWorkspaceId });
-    if (data) {
+    if (data && data.id !== campaign.id) {
       updateActiveWorkspace(ws => ({
         ...ws,
-        campaigns: [...(ws.campaigns || []), data],
-      }));
-    } else {
-      updateActiveWorkspace(ws => ({
-        ...ws,
-        campaigns: [...(ws.campaigns || []), campaign],
+        campaigns: (ws.campaigns || []).map(c => c.id === campaign.id ? { ...c, id: data.id } : c),
       }));
     }
   };
@@ -496,16 +494,15 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createLeadList = async (list: LeadList) => {
+    updateActiveWorkspace(ws => ({
+      ...ws,
+      leadLists: [...(ws.leadLists || []), list],
+    }));
     const data = await apiCall('/lead-lists', 'POST', { ...list, workspaceId: activeWorkspaceId });
-    if (data) {
+    if (data && data.id !== list.id) {
       updateActiveWorkspace(ws => ({
         ...ws,
-        leadLists: [...(ws.leadLists || []), data],
-      }));
-    } else {
-      updateActiveWorkspace(ws => ({
-        ...ws,
-        leadLists: [...(ws.leadLists || []), list],
+        leadLists: (ws.leadLists || []).map(l => l.id === list.id ? { ...l, id: data.id } : l),
       }));
     }
   };

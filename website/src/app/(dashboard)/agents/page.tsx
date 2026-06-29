@@ -54,80 +54,77 @@ export default function AgentsPage() {
     setOneTimeList("");
   };
 
-  const handleCreateAgent = () => {
-    if (agentType === "autopilot") {
-      const newAgent: AIAgent = {
-        id: `agent-${Date.now()}`,
-        name: `${scanReport?.companyName || "My"} Agent`,
-        type: "autopilot",
-        status: "active",
-        createdAt: new Date().toISOString(),
-        icp: {
-          jobTitles: icpForm.jobTitles.split(",").map(s => s.trim()).filter(Boolean),
-          industries: icpForm.industries.split(",").map(s => s.trim()).filter(Boolean),
-          companySizes: icpForm.companySizes,
-          locations: icpForm.locations.split(",").map(s => s.trim()).filter(Boolean),
-          companyTypes: icpForm.companyTypes,
-          additionalCriteria: icpForm.additionalCriteria,
-        },
-        signals: {
-          companyLinkedIn: signalForm.companyLinkedIn,
-          engagementKeywords: signalForm.engagementKeywords.split(",").map(s => s.trim()).filter(Boolean),
-          influencers: signalForm.influencers.split(",").map(s => s.trim()).filter(Boolean),
-          triggerTopIcp: signalForm.triggerTopIcp,
-          triggerFunding: signalForm.triggerFunding,
-          triggerJobChanges: signalForm.triggerJobChanges,
-          linkedInGroups: signalForm.linkedInGroups.split(",").map(s => s.trim()).filter(Boolean),
-          linkedInEvents: signalForm.linkedInEvents.split(",").map(s => s.trim()).filter(Boolean),
-          competitors: signalForm.competitors.split(",").map(s => s.trim()).filter(Boolean),
-          excludedCompanies: signalForm.excludedCompanies.split(",").map(s => s.trim()).filter(Boolean),
-        },
-        logs: [
-          { message: `Agent initialized — targeting ${icpForm.jobTitles || "target roles"}`, time: "Just now" },
-          { message: `Configured with ${signalForm.engagementKeywords.split(",").filter(Boolean).length + (signalForm.triggerTopIcp ? 1 : 0) + (signalForm.triggerFunding ? 1 : 0) + (signalForm.triggerJobChanges ? 1 : 0) + signalForm.influencers.split(",").filter(Boolean).length + signalForm.competitors.split(",").filter(Boolean).length} signals`, time: "Just now" },
-        ],
-        leadsAnalyzed: 0,
-        icpMatchCount: 0,
-        leadsSavedCount: 0,
-      };
-      createAgent(newAgent);
-    } else {
-      const newAgent: AIAgent = {
-        id: `agent-${Date.now()}`,
-        name: `One-time: ${oneTimeLink.substring(0, 40)}...`,
-        type: "onetime",
-        status: "active",
-        createdAt: new Date().toISOString(),
-        icp: {
-          jobTitles: icpForm.jobTitles.split(",").map(s => s.trim()).filter(Boolean),
-          industries: [],
-          companySizes: [],
-          locations: [],
-          companyTypes: [],
-          additionalCriteria: "",
-        },
-        signals: {
-          companyLinkedIn: "",
-          engagementKeywords: [],
-          influencers: [],
-          triggerTopIcp: false,
-          triggerFunding: false,
-          triggerJobChanges: false,
-          linkedInGroups: [],
-          linkedInEvents: [],
-          competitors: [],
-          excludedCompanies: [],
-        },
-        logs: [
-          { message: `One-time agent created for: ${oneTimeLink}`, time: "Just now" },
-          { message: `Sending leads to list: ${oneTimeList || "Default"}`, time: "Just now" },
-        ],
-        leadsAnalyzed: 0,
-        icpMatchCount: 0,
-        leadsSavedCount: 0,
-      };
-      createAgent(newAgent);
-    }
+  const handleCreateAgent = async () => {
+    const newAgent: AIAgent = agentType === "autopilot"
+      ? {
+          id: `agent-${Date.now()}`,
+          name: `${scanReport?.companyName || "My"} Agent`,
+          type: "autopilot",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          icp: {
+            jobTitles: icpForm.jobTitles.split(",").map(s => s.trim()).filter(Boolean),
+            industries: icpForm.industries.split(",").map(s => s.trim()).filter(Boolean),
+            companySizes: icpForm.companySizes,
+            locations: icpForm.locations.split(",").map(s => s.trim()).filter(Boolean),
+            companyTypes: icpForm.companyTypes,
+            additionalCriteria: icpForm.additionalCriteria,
+          },
+          signals: {
+            companyLinkedIn: signalForm.companyLinkedIn,
+            engagementKeywords: signalForm.engagementKeywords.split(",").map(s => s.trim()).filter(Boolean),
+            influencers: signalForm.influencers.split(",").map(s => s.trim()).filter(Boolean),
+            triggerTopIcp: signalForm.triggerTopIcp,
+            triggerFunding: signalForm.triggerFunding,
+            triggerJobChanges: signalForm.triggerJobChanges,
+            linkedInGroups: signalForm.linkedInGroups.split(",").map(s => s.trim()).filter(Boolean),
+            linkedInEvents: signalForm.linkedInEvents.split(",").map(s => s.trim()).filter(Boolean),
+            competitors: signalForm.competitors.split(",").map(s => s.trim()).filter(Boolean),
+            excludedCompanies: signalForm.excludedCompanies.split(",").map(s => s.trim()).filter(Boolean),
+          },
+          logs: [
+            { message: `Agent initialized — targeting ${icpForm.jobTitles || "target roles"}`, time: "Just now" },
+            { message: `Configured with ${signalForm.engagementKeywords.split(",").filter(Boolean).length + (signalForm.triggerTopIcp ? 1 : 0) + (signalForm.triggerFunding ? 1 : 0) + (signalForm.triggerJobChanges ? 1 : 0) + signalForm.influencers.split(",").filter(Boolean).length + signalForm.competitors.split(",").filter(Boolean).length} signals`, time: "Just now" },
+          ],
+          leadsAnalyzed: 0,
+          icpMatchCount: 0,
+          leadsSavedCount: 0,
+        }
+      : {
+          id: `agent-${Date.now()}`,
+          name: `One-time: ${oneTimeLink.substring(0, 40)}...`,
+          type: "onetime",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          icp: {
+            jobTitles: icpForm.jobTitles.split(",").map(s => s.trim()).filter(Boolean),
+            industries: [],
+            companySizes: [],
+            locations: [],
+            companyTypes: [],
+            additionalCriteria: "",
+          },
+          signals: {
+            companyLinkedIn: "",
+            engagementKeywords: [],
+            influencers: [],
+            triggerTopIcp: false,
+            triggerFunding: false,
+            triggerJobChanges: false,
+            linkedInGroups: [],
+            linkedInEvents: [],
+            competitors: [],
+            excludedCompanies: [],
+          },
+          logs: [
+            { message: `One-time agent created for: ${oneTimeLink}`, time: "Just now" },
+            { message: `Sending leads to list: ${oneTimeList || "Default"}`, time: "Just now" },
+          ],
+          leadsAnalyzed: 0,
+          icpMatchCount: 0,
+          leadsSavedCount: 0,
+        };
+    await createAgent(newAgent);
     resetWizard();
   };
 
