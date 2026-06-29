@@ -14,6 +14,7 @@ import { SequencesModule } from './modules/sequences/sequences.module';
 import { VisitorsModule } from './modules/visitors/visitors.module';
 import { DeliverabilityModule } from './modules/deliverability/deliverability.module';
 import { DatabaseModule } from './database/database.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { DatabaseModule } from './database/database.module';
     SequencesModule,
     VisitorsModule,
     DeliverabilityModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
