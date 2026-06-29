@@ -15,7 +15,7 @@ function OnboardingContent() {
   const searchParams = useSearchParams();
   const { 
     runWebsiteScan, scanningInProgress, scanReport,
-    updateWorkspaceName, isLoggedIn
+    updateWorkspaceName, isLoggedIn, plan
   } = useAppState();
 
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -33,8 +33,10 @@ function OnboardingContent() {
   useEffect(() => {
     if (!isLoggedIn) {
       router.push("/login");
+    } else if (plan !== "pro") {
+      router.push("/pricing");
     }
-  }, [isLoggedIn, router]);
+  }, [isLoggedIn, plan, router]);
 
   const runScan = async (cleanUrl: string) => {
     setScanPercentage(5);

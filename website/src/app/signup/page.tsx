@@ -67,7 +67,7 @@ function SignupForm() {
         login(email, name);
         
         const urlParam = searchParams.get("url") || searchParams.get("domain");
-        let redirectUrl = "/onboarding";
+        let redirectUrl = "/pricing";
         if (urlParam) redirectUrl += `?url=${encodeURIComponent(urlParam)}`;
         
         router.push(redirectUrl);
