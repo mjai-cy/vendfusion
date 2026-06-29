@@ -18,25 +18,25 @@ export default function AgentsPage() {
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
 
   const [icpForm, setIcpForm] = useState({
-    jobTitles: "",
-    industries: "",
-    companySizes: [] as string[],
-    locations: "",
-    companyTypes: [] as string[],
-    additionalCriteria: "",
+    jobTitles: "Founder, CEO, Head of Sales, CMO",
+    industries: "Technology, Consumer Electronics, Lifestyle, Retail",
+    companySizes: ["11-50", "51-200"] as string[],
+    locations: "India, United States",
+    companyTypes: ["Startup", "Private Company"] as string[],
+    additionalCriteria: "Focus on D2C brands and consumer tech companies. Score low for agencies and service providers.",
   });
 
   const [signalForm, setSignalForm] = useState({
-    companyLinkedIn: "",
-    engagementKeywords: "",
-    influencers: "",
-    triggerTopIcp: false,
-    triggerFunding: false,
-    triggerJobChanges: false,
+    companyLinkedIn: "https://www.linkedin.com/company/boat-lifestyle/",
+    engagementKeywords: "cold mail, lead generation",
+    influencers: "https://www.linkedin.com/in/aman-gupta-7217a515/",
+    triggerTopIcp: true,
+    triggerFunding: true,
+    triggerJobChanges: true,
     linkedInGroups: "",
     linkedInEvents: "",
     competitors: "",
-    excludedCompanies: "",
+    excludedCompanies: "apple, google, amazon",
   });
 
   const [listName, setListName] = useState("");
@@ -47,8 +47,8 @@ export default function AgentsPage() {
     setShowWizard(false);
     setAgentType(null);
     setStep("type");
-    setIcpForm({ jobTitles: "", industries: "", companySizes: [], locations: "", companyTypes: [], additionalCriteria: "" });
-    setSignalForm({ companyLinkedIn: "", engagementKeywords: "", influencers: "", triggerTopIcp: false, triggerFunding: false, triggerJobChanges: false, linkedInGroups: "", linkedInEvents: "", competitors: "", excludedCompanies: "" });
+    setIcpForm({ jobTitles: "Founder, CEO, Head of Sales, CMO", industries: "Technology, Consumer Electronics, Lifestyle, Retail", companySizes: ["11-50", "51-200"], locations: "India, United States", companyTypes: ["Startup", "Private Company"], additionalCriteria: "Focus on D2C brands and consumer tech companies. Score low for agencies and service providers." });
+    setSignalForm({ companyLinkedIn: "https://www.linkedin.com/company/boat-lifestyle/", engagementKeywords: "cold mail, lead generation", influencers: "https://www.linkedin.com/in/aman-gupta-7217a515/", triggerTopIcp: true, triggerFunding: true, triggerJobChanges: true, linkedInGroups: "", linkedInEvents: "", competitors: "", excludedCompanies: "apple, google, amazon" });
     setListName("");
     setOneTimeLink("");
     setOneTimeList("");
