@@ -54,15 +54,7 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const isLocalAuth = localStorage.getItem("xyz_isLoggedIn") === "true";
     setHydrated(true);
-
-    // If not logged in, redirect to the website's signup page
-    if (!isLocalAuth) {
-      const websiteUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000";
-      window.location.href = `${websiteUrl}/signup`;
-      return;
-    }
   }, [isLoggedIn]);
 
   const navItems = [
