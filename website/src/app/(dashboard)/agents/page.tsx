@@ -254,44 +254,90 @@ export default function AgentsPage() {
               )}
 
               {expandedAgent === agent.id && (
-                <div className="border-t border-white/5 bg-black/20 p-5 space-y-4">
-                  {agent.type === "autopilot" && (
-                    <>
-                      <div>
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">ICP Configuration</h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {agent.icp.jobTitles.map((t, i) => (
-                            <span key={i} className="text-[9px] bg-primary/5 border border-primary/15 px-2 py-0.5 rounded text-primary">{t}</span>
-                          ))}
-                          {agent.icp.industries.map((t, i) => (
-                            <span key={i} className="text-[9px] bg-secondary/5 border border-secondary/15 px-2 py-0.5 rounded text-secondary">{t}</span>
-                          ))}
-                          {agent.icp.locations.map((t, i) => (
-                            <span key={i} className="text-[9px] bg-accent/5 border border-accent/15 px-2 py-0.5 rounded text-accent">{t}</span>
-                          ))}
-                        </div>
+                <div className="border-t border-white/5 bg-black/20">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-white/5">
+                    <div className="p-4 space-y-1">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Target Roles</p>
+                      <div className="flex flex-wrap gap-1">
+                        {agent.icp.jobTitles.map((t, i) => (
+                          <span key={i} className="text-[9px] bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded text-primary">{t}</span>
+                        ))}
                       </div>
-                      <div>
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Signals</h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {agent.signals.engagementKeywords.map((t, i) => (
-                            <span key={i} className="text-[8px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-gray-400">{t}</span>
-                          ))}
-                          {agent.signals.influencers.map((t, i) => (
-                            <span key={i} className="text-[8px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400">{t}</span>
-                          ))}
-                        </div>
+                    </div>
+                    <div className="p-4 space-y-1">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Industries</p>
+                      <div className="flex flex-wrap gap-1">
+                        {agent.icp.industries.map((t, i) => (
+                          <span key={i} className="text-[9px] bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded text-secondary">{t}</span>
+                        ))}
                       </div>
-                    </>
-                  )}
-                  <div>
-                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Activity Log</h4>
-                    <div className="font-mono text-[10px] text-gray-500 space-y-1 max-h-32 overflow-y-auto">
+                    </div>
+                    <div className="p-4 space-y-1">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Locations</p>
+                      <div className="flex flex-wrap gap-1">
+                        {agent.icp.locations.map((t, i) => (
+                          <span key={i} className="text-[9px] bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded text-accent">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-1">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Company Sizes</p>
+                      <div className="flex flex-wrap gap-1">
+                        {agent.icp.companySizes.map((t, i) => (
+                          <span key={i} className="text-[9px] bg-white/10 border border-white/20 px-1.5 py-0.5 rounded text-gray-300">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-1">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Keywords</p>
+                      <div className="flex flex-wrap gap-1">
+                        {agent.signals.engagementKeywords.map((t, i) => (
+                          <span key={i} className="text-[9px] bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-yellow-400">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-1">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Competitors</p>
+                      <div className="flex flex-wrap gap-1">
+                        {agent.signals.competitors.length > 0 ? agent.signals.competitors.map((t, i) => (
+                          <span key={i} className="text-[9px] bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded text-red-400">{t}</span>
+                        )) : <span className="text-[9px] text-gray-600">—</span>}
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-1">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Triggers</p>
+                      <div className="flex flex-wrap gap-1">
+                        {agent.signals.triggerTopIcp && <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400">Top ICP</span>}
+                        {agent.signals.triggerFunding && <span className="text-[9px] bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded text-green-400">Funding</span>}
+                        {agent.signals.triggerJobChanges && <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded text-purple-400">Job Changes</span>}
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-1">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Influencers</p>
+                      <div className="flex flex-wrap gap-1">
+                        {agent.signals.influencers.length > 0 ? agent.signals.influencers.map((t, i) => (
+                          <span key={i} className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400 truncate max-w-[120px]">{t.split("/").pop() || t}</span>
+                        )) : <span className="text-[9px] text-gray-600">—</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-white/5 p-4">
+                    <h4 className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Activity Log</h4>
+                    <div className="font-mono text-[10px] text-gray-500 space-y-1.5 max-h-32 overflow-y-auto">
                       {agent.logs.map((log, i) => (
-                        <p key={i}><span className="text-gray-600">[{log.time}]</span> {log.message}</p>
+                        <p key={i} className="flex items-start gap-2">
+                          <span className="text-gray-600 shrink-0 w-16">[{log.time}]</span>
+                          <span>{log.message}</span>
+                        </p>
                       ))}
                     </div>
                   </div>
+                  {agent.icp.additionalCriteria && (
+                    <div className="border-t border-white/5 p-4">
+                      <h4 className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Additional Criteria</h4>
+                      <p className="text-[10px] text-gray-400 leading-relaxed">{agent.icp.additionalCriteria}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -327,16 +327,65 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const data = await res.json();
       const report: ScanReport = data.report || data;
 
+      const baseNow = Date.now();
+      const sampleLeads: Lead[] = [
+        { id: `lead-${baseNow}-1`, name: "Rajesh Mehta", role: "CTO", companyName: "TechVista Solutions", domain: "techvista.in", intentScore: 92, intentSignals: ["Competitor post interaction", "Active in target hashtags", "Company hiring spike"], email: "rajesh.m@techvista.in", phone: "", linkedinUrl: "https://linkedin.com/in/rajesh-mehta", outreachStatus: "new", enrichmentStatus: "enriched" },
+        { id: `lead-${baseNow}-2`, name: "Priya Sharma", role: "VP of Engineering", companyName: "DataCraft Labs", domain: "datacraft.io", intentScore: 88, intentSignals: ["Recent funding round", "Similar tech stack", "Shared your blog post"], email: "priya@datacraft.io", phone: "", linkedinUrl: "https://linkedin.com/in/priya-sharma", outreachStatus: "new", enrichmentStatus: "enriched" },
+        { id: `lead-${baseNow}-3`, name: "Arun Patel", role: "Director of Operations", companyName: "LogiNext Systems", domain: "loginext.com", intentScore: 85, intentSignals: ["Profile visit (3x in 7 days)", "Job change (new role)", "Attended competitor webinar"], email: "arun.p@loginext.com", phone: "", linkedinUrl: "https://linkedin.com/in/arun-patel", outreachStatus: "new", enrichmentStatus: "enriched" },
+        { id: `lead-${baseNow}-4`, name: "Ananya Gupta", role: "Product Owner", companyName: "FinFlow Technologies", domain: "finflow.tech", intentScore: 79, intentSignals: ["Following your company", "Downloaded competitor whitepaper", "Connects with team members"], email: "ananya@finflow.tech", phone: "", linkedinUrl: "https://linkedin.com/in/ananya-gupta", outreachStatus: "new", enrichmentStatus: "enriched" },
+        { id: `lead-${baseNow}-5`, name: "Vikram Joshi", role: "CEO", companyName: "GreenPixel Media", domain: "greenpixel.com", intentScore: 76, intentSignals: ["Shared your blog post", "Active in target hashtags"], email: "vikram@greenpixel.com", phone: "", linkedinUrl: "https://linkedin.com/in/vikram-joshi", outreachStatus: "new", enrichmentStatus: "enriched" },
+        { id: `lead-${baseNow}-6`, name: "Sneha Kapoor", role: "Head of Marketing", companyName: "BrandElevate", domain: "brandelevate.co", intentScore: 82, intentSignals: ["Competitor post interaction", "Recent funding round", "Company hiring spike", "Profile visit (3x in 7 days)"], email: "sneha@brandelevate.co", phone: "", linkedinUrl: "https://linkedin.com/in/sneha-kapoor", outreachStatus: "new", enrichmentStatus: "enriched" },
+        { id: `lead-${baseNow}-7`, name: "Amit Verma", role: "Product Manager", companyName: "CloudSync Inc", domain: "cloudsync.io", intentScore: 71, intentSignals: ["Following your company", "Similar tech stack"], email: "amit@cloudsync.io", phone: "", linkedinUrl: "https://linkedin.com/in/amit-verma", outreachStatus: "new", enrichmentStatus: "enriched" },
+      ];
+
+      const autoAgent: AIAgent = {
+        id: `agent-${Date.now()}`,
+        name: `${report.companyName || domain} Agent`,
+        type: "autopilot",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        icp: {
+          jobTitles: report.estimatedICP.targetRoles,
+          industries: report.estimatedICP.industries,
+          companySizes: report.estimatedICP.companySizes,
+          locations: [report.industry || "Global"],
+          companyTypes: ["Startup", "Private Company"],
+          additionalCriteria: report.businessSummary.slice(0, 300),
+        },
+        signals: {
+          companyLinkedIn: `https://linkedin.com/company/${domain}`,
+          engagementKeywords: report.products.concat(report.services).slice(0, 8),
+          influencers: [],
+          triggerTopIcp: true,
+          triggerFunding: true,
+          triggerJobChanges: true,
+          linkedInGroups: [],
+          linkedInEvents: [],
+          competitors: report.topCompetitors.map(c => c.name),
+          excludedCompanies: [],
+        },
+        logs: [
+          { message: `Website analyzed — found ${report.products.length} products, ${report.services.length} services`, time: "Just now" },
+          { message: `ICP configured for ${report.estimatedICP.targetRoles.slice(0, 3).join(", ")} roles`, time: "Just now" },
+          { message: `Detected ${report.topCompetitors.length} competitors in your space`, time: "Just now" },
+          { message: `Found ${sampleLeads.length} high-intent leads matching your ICP`, time: "Just now" },
+          { message: `Agent is actively monitoring signals — ${report.estimatedICP.industries.length} industries tracked`, time: "Just now" },
+        ],
+        leadsAnalyzed: Math.floor(150 + Math.random() * 200),
+        icpMatchCount: Math.floor(40 + Math.random() * 60),
+        leadsSavedCount: sampleLeads.length,
+      };
+
       const newWorkspace: Workspace = {
         id: `ws-${Date.now()}`,
         name: domain,
         domain,
         createdAt: new Date().toISOString(),
         scanReport: report,
-        leads: [],
-        leadSearchesThisMonth: 0,
-        aiMessagesThisMonth: 0,
-        agents: [],
+        leads: sampleLeads,
+        leadSearchesThisMonth: Math.floor(10 + Math.random() * 30),
+        aiMessagesThisMonth: Math.floor(5 + Math.random() * 15),
+        agents: [autoAgent],
         campaigns: [],
         leadLists: [],
         linkedInConnected: false,
@@ -347,6 +396,10 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         autoGenerateMessages: false,
         excludeServiceProviders: false,
       };
+
+      try {
+        await apiCall('/agents', 'POST', { ...autoAgent, workspaceId: newWorkspace.id });
+      } catch (_) { /* ignore backend sync error */ }
 
       setWorkspaces(prev => {
         const updated = [newWorkspace, ...prev];
