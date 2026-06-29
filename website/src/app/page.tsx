@@ -106,8 +106,128 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ─── Power Stack Section ─────────────────────────────────── */}
+      <section className="py-20 border-t border-white/5 bg-black/20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="inline-flex items-center gap-2 text-[10px] font-bold px-3 py-1.5 rounded-full border border-secondary/20 bg-secondary/5 text-secondary uppercase tracking-wider">
+              The Complete Outbound Stack
+            </span>
+            <h2 className="text-3xl font-bold tracking-tight text-white">
+              xyz.ai finds <span className="text-primary">who to contact</span>.{" "}
+              Your stack handles <span className="text-secondary">the rest</span>.
+            </h2>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              xyz.ai is not trying to replace Apollo or lemlist — it fills the{" "}
+              <strong className="text-white">"who to contact and when"</strong> gap that volume-based tools miss.
+              Pair it with Clay and Instantly for a complete, intent-driven outbound engine.
+            </p>
+          </div>
+
+          {/* Stack flow */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+            {/* Connector lines (desktop) */}
+            <div className="hidden md:block absolute top-1/2 left-1/3 right-1/3 h-px bg-gradient-to-r from-primary/30 via-yellow-500/30 to-blue-500/30 -translate-y-1/2 z-0" />
+
+            {/* Step 1 — xyz.ai */}
+            <div className="relative z-10 rounded-2xl border border-primary/30 bg-primary/5 p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+                  <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                  <p className="font-extrabold text-primary">xyz.ai</p>
+                  <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Step 1 · Signal Intelligence</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Monitors LinkedIn activity, funding rounds, job changes, and competitor follows in real time. Identifies warm, in-market prospects and scores them against your ICP.
+              </p>
+              <div className="space-y-1.5">
+                {["Intent signal detection", "ICP scoring & qualification", "Personalised outreach drafts"].map((t, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[10px] text-gray-500">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    {t}
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <div className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
+                <span className="text-[9px] text-secondary font-bold uppercase tracking-wider">Running 24/7</span>
+              </div>
+            </div>
+
+            {/* Step 2 — Clay */}
+            <div className="relative z-10 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                  <svg className="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                </div>
+                <div>
+                  <p className="font-extrabold text-yellow-400">Clay</p>
+                  <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Step 2 · Data Enrichment</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Enriches xyz.ai's warm leads with verified emails, phone numbers, company data, and AI-researched personalisation from 150+ data sources.
+              </p>
+              <div className="space-y-1.5">
+                {["Waterfall enrichment (150+ sources)", "Verified email & phone", "AI personalisation (Claygent)"].map((t, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[10px] text-gray-500">
+                    <div className="h-1.5 w-1.5 rounded-full bg-yellow-400" />
+                    {t}
+                  </div>
+                ))}
+              </div>
+              <a href="/integrations" className="inline-flex items-center gap-1 text-[10px] text-yellow-400 font-bold hover:text-yellow-300 transition-colors">
+                Connect Clay →
+              </a>
+            </div>
+
+            {/* Step 3 — Instantly */}
+            <div className="relative z-10 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                  <svg className="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                </div>
+                <div>
+                  <p className="font-extrabold text-blue-400">Instantly.ai</p>
+                  <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Step 3 · Scale & Deliverability</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Sends enriched, warm leads at scale with inbox-protecting warmup and spam prevention — ensuring every email lands in the primary inbox.
+              </p>
+              <div className="space-y-1.5">
+                {["Unlimited email accounts", "Native warmup & spam protection", "Inbox-first delivery at scale"].map((t, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[10px] text-gray-500">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                    {t}
+                  </div>
+                ))}
+              </div>
+              <a href="/integrations" className="inline-flex items-center gap-1 text-[10px] text-blue-400 font-bold hover:text-blue-300 transition-colors">
+                Connect Instantly →
+              </a>
+            </div>
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="text-center">
+            <a
+              href="/integrations"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-semibold text-white transition-all"
+            >
+              Set up your power stack
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* 4-Step Feature Section */}
       <section className="py-24 bg-black/10 border-t border-white/5">
+
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-16">
           
           <div className="text-center space-y-4 max-w-3xl mx-auto">
@@ -410,7 +530,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="rounded-2xl border border-white/5 bg-dark-bg p-6 glass-panel flex flex-col justify-between">
               <p className="text-gray-300 text-sm italic leading-relaxed">
-                "We're booking 15+ demos per week with Gojiberry AI. It helped us close key accounts like Decathlon, Allianz, AXA."
+                "We're booking 15+ demos per week with xyz AI. It helped us close key accounts like Decathlon, Allianz, AXA."
               </p>
               <div className="mt-6 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-primary">LD</div>
@@ -436,7 +556,7 @@ export default function Home() {
 
             <div className="rounded-2xl border border-white/5 bg-dark-bg p-6 glass-panel flex flex-col justify-between">
               <p className="text-gray-300 text-sm italic leading-relaxed">
-                "We booked 5 demos from just 30 leads found by our AI Agent. Gojiberry gave us direct founders' contact info."
+                "We booked 5 demos from just 30 leads found by our AI Agent. xyz gave us direct founders' contact info."
               </p>
               <div className="mt-6 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center font-bold text-accent">AP</div>
@@ -493,7 +613,7 @@ export default function Home() {
                   onClick={() => router.push("/signup")}
                   className="w-full inline-flex h-11 items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all"
                 >
-                  Try Gojiberry for free →
+                  Try xyz for free →
                 </button>
                 <div className="border-t border-white/5 pt-6 space-y-3">
                   <p className="text-xs font-semibold text-gray-200 uppercase tracking-wider">What's included</p>
@@ -532,24 +652,24 @@ export default function Home() {
           <div className="space-y-4">
             {[
               {
-                q: "How is Gojiberry different from classic automation tools?",
-                a: "Classic automation tools help you send more messages. Gojiberry helps you decide who to contact, when to contact them, and what to say. Instead of uploading cold lists, writing generic sequences, and hoping volume turns into replies, Gojiberry detects buying and social signals, matches prospects against your ICP, scores leads, and launches relevant LinkedIn and email outreach."
+                q: "How is xyz different from classic automation tools?",
+                a: "Classic automation tools help you send more messages. xyz helps you decide who to contact, when to contact them, and what to say. Instead of uploading cold lists, writing generic sequences, and hoping volume turns into replies, xyz detects buying and social signals, matches prospects against your ICP, scores leads, and launches relevant LinkedIn and email outreach."
               },
               {
-                q: "Is Gojiberry only a LinkedIn automation tool?",
-                a: "No. LinkedIn is one of the main channels Gojiberry uses today, but Gojiberry is an AI GTM Agent for outbound teams. It helps you find relevant prospects, detect buying and social signals, understand why each lead matters, prioritize who to contact first, write personalized LinkedIn and email messages, run multichannel outreach, and generate more qualified conversations."
+                q: "Is xyz only a LinkedIn automation tool?",
+                a: "No. LinkedIn is one of the main channels xyz uses today, but xyz is an AI GTM Agent for outbound teams. It helps you find relevant prospects, detect buying and social signals, understand why each lead matters, prioritize who to contact first, write personalized LinkedIn and email messages, run multichannel outreach, and generate more qualified conversations."
               },
               {
-                q: "How does Gojiberry find high-intent leads?",
-                a: "Gojiberry monitors signals that suggest a prospect may be more relevant or more likely to engage. These include people engaging with your company or content, profile visits, company followers, engagement around competitors, job changes, hiring activity, lookalikes based on your best customers, and relevant activity inside your market."
+                q: "How does xyz find high-intent leads?",
+                a: "xyz monitors signals that suggest a prospect may be more relevant or more likely to engage. These include people engaging with your company or content, profile visits, company followers, engagement around competitors, job changes, hiring activity, lookalikes based on your best customers, and relevant activity inside your market."
               },
               {
                 q: "What does the AI agent actually do?",
-                a: "Gojiberry's AI agents help you move from 'Who should we contact?' to 'These are the right people to reach now, and here is the best way to start the conversation.' The agents can find prospects based on your ICP, detect buying and social signals, enrich contacts, score and prioritize leads, generate personalized LinkedIn and email messages, and launch outreach workflows."
+                a: "xyz's AI agents help you move from 'Who should we contact?' to 'These are the right people to reach now, and here is the best way to start the conversation.' The agents can find prospects based on your ICP, detect buying and social signals, enrich contacts, score and prioritize leads, generate personalized LinkedIn and email messages, and launch outreach workflows."
               },
               {
-                q: "Is Gojiberry safe for LinkedIn?",
-                a: "Yes. Gojiberry is built with account safety in mind. It uses human-like sending limits, smart pacing and delays, quality filters before outreach, warm intent-based targeting, and controlled daily activity. Because the focus is on relevant prospects instead of mass-volume outreach, activity stays safer and more natural."
+                q: "Is xyz safe for LinkedIn?",
+                a: "Yes. xyz is built with account safety in mind. It uses human-like sending limits, smart pacing and delays, quality filters before outreach, warm intent-based targeting, and controlled daily activity. Because the focus is on relevant prospects instead of mass-volume outreach, activity stays safer and more natural."
               }
             ].map((faq, i) => (
               <div key={i} className="rounded-xl border border-white/5 bg-dark-bg/60 glass-panel overflow-hidden">

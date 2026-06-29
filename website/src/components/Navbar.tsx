@@ -17,7 +17,7 @@ export const Navbar: React.FC = () => {
     { label: "Home", href: "/" },
     { label: "Features", href: "/features" },
     { label: "Pricing", href: "/pricing" },
-    { label: "FAQ", href: "/faq" },
+    { label: "Persona Tool", href: "/persona" },
     { label: "Contact", href: "/contact" },
   ];
 
@@ -32,7 +32,7 @@ export const Navbar: React.FC = () => {
                 <div className="absolute inset-0 rounded-lg bg-primary/20 blur opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-                Gojiberry<span className="text-primary">.ai</span>
+                xyz<span className="text-primary">.ai</span>
               </span>
             </Link>
           </div>

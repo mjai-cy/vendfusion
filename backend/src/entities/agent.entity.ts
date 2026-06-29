@@ -10,7 +10,7 @@ export class Agent {
   name: string;
 
   @Column()
-  type: 'autopilot' | 'onetime';
+  type: 'autopilot' | 'onetime' | 'subagent';
 
   @Column({ default: 'active' })
   status: 'active' | 'paused' | 'completed';

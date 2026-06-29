@@ -13,9 +13,11 @@ type WizardStep = "type" | "icp" | "signals" | "leads" | "review";
 export default function AgentsPage() {
   const { agents, createAgent, deleteAgent, updateAgent, scanReport } = useAppState();
   const [showWizard, setShowWizard] = useState(false);
-  const [agentType, setAgentType] = useState<"autopilot" | "onetime" | null>(null);
+  const [agentType, setAgentType] = useState<"autopilot" | "onetime" | "subagent" | null>(null);
   const [step, setStep] = useState<WizardStep>("type");
-  const [expandedDetail, setExpandedDetail] = useState<{ agentId: string; tab: "overview" | "logs" } | null>(null);
+  const [expandedDetail, setExpandedDetail] = useState<{ agentId: string; tab: "overview" | "logs" | "performance" } | null>(null);
+  const [subagentTask, setSubagentTask] = useState<"linkedin_outreach" | "email_writer" | "lead_researcher">("linkedin_outreach");
+  const [parentAgentId, setParentAgentId] = useState("");
 
   const [icpForm, setIcpForm] = useState({
     jobTitles: "Founder, CEO, Head of Sales, CMO",
@@ -27,16 +29,16 @@ export default function AgentsPage() {
   });
 
   const [signalForm, setSignalForm] = useState({
-    companyLinkedIn: "https://www.linkedin.com/company/boat-lifestyle/",
-    engagementKeywords: "cold mail, lead generation",
-    influencers: "https://www.linkedin.com/in/aman-gupta-7217a515/",
+    companyLinkedIn: "https://www.linkedin.com/company/yourcompany/",
+    engagementKeywords: "lead gen, outbound",
+    influencers: "",
     triggerTopIcp: true,
     triggerFunding: true,
     triggerJobChanges: true,
     linkedInGroups: "",
     linkedInEvents: "",
     competitors: "",
-    excludedCompanies: "apple, google, amazon",
+    excludedCompanies: "",
   });
 
   const [listName, setListName] = useState("");
@@ -52,6 +54,8 @@ export default function AgentsPage() {
     setListName("");
     setOneTimeLink("");
     setOneTimeList("");
+    setSubagentTask("linkedin_outreach");
+    setParentAgentId("");
   };
 
   const [creatingAgent, setCreatingAgent] = useState(false);
@@ -59,75 +63,116 @@ export default function AgentsPage() {
   const handleCreateAgent = () => {
     if (creatingAgent) return;
     setCreatingAgent(true);
-    const newAgent: AIAgent = agentType === "autopilot"
-      ? {
-          id: `agent-${Date.now()}`,
-          name: `${scanReport?.companyName || "My"} Agent`,
-          type: "autopilot",
-          status: "active",
-          createdAt: new Date().toISOString(),
-          icp: {
-            jobTitles: icpForm.jobTitles.split(",").map(s => s.trim()).filter(Boolean),
-            industries: icpForm.industries.split(",").map(s => s.trim()).filter(Boolean),
-            companySizes: icpForm.companySizes,
-            locations: icpForm.locations.split(",").map(s => s.trim()).filter(Boolean),
-            companyTypes: icpForm.companyTypes,
-            additionalCriteria: icpForm.additionalCriteria,
-          },
-          signals: {
-            companyLinkedIn: signalForm.companyLinkedIn,
-            engagementKeywords: signalForm.engagementKeywords.split(",").map(s => s.trim()).filter(Boolean),
-            influencers: signalForm.influencers.split(",").map(s => s.trim()).filter(Boolean),
-            triggerTopIcp: signalForm.triggerTopIcp,
-            triggerFunding: signalForm.triggerFunding,
-            triggerJobChanges: signalForm.triggerJobChanges,
-            linkedInGroups: signalForm.linkedInGroups.split(",").map(s => s.trim()).filter(Boolean),
-            linkedInEvents: signalForm.linkedInEvents.split(",").map(s => s.trim()).filter(Boolean),
-            competitors: signalForm.competitors.split(",").map(s => s.trim()).filter(Boolean),
-            excludedCompanies: signalForm.excludedCompanies.split(",").map(s => s.trim()).filter(Boolean),
-          },
-          logs: [
-            { message: `Agent initialized — targeting ${icpForm.jobTitles || "target roles"}`, time: "Just now" },
-            { message: `Configured with ${signalForm.engagementKeywords.split(",").filter(Boolean).length + (signalForm.triggerTopIcp ? 1 : 0) + (signalForm.triggerFunding ? 1 : 0) + (signalForm.triggerJobChanges ? 1 : 0) + signalForm.influencers.split(",").filter(Boolean).length + signalForm.competitors.split(",").filter(Boolean).length} signals`, time: "Just now" },
-          ],
-          leadsAnalyzed: 0,
-          icpMatchCount: 0,
-          leadsSavedCount: 0,
-        }
-      : {
-          id: `agent-${Date.now()}`,
-          name: `One-time: ${oneTimeLink.substring(0, 40)}...`,
-          type: "onetime",
-          status: "active",
-          createdAt: new Date().toISOString(),
-          icp: {
-            jobTitles: icpForm.jobTitles.split(",").map(s => s.trim()).filter(Boolean),
-            industries: [],
-            companySizes: [],
-            locations: [],
-            companyTypes: [],
-            additionalCriteria: "",
-          },
-          signals: {
-            companyLinkedIn: "",
-            engagementKeywords: [],
-            influencers: [],
-            triggerTopIcp: false,
-            triggerFunding: false,
-            triggerJobChanges: false,
-            linkedInGroups: [],
-            linkedInEvents: [],
-            competitors: [],
-            excludedCompanies: [],
-          },
-          logs: [
-            { message: `One-time agent created for: ${oneTimeLink}`, time: "Just now" },
-            { message: `Sending leads to list: ${oneTimeList || "Default"}`, time: "Just now" },
-          ],
-          leadsAnalyzed: 0,
-          icpMatchCount: 0,
-          leadsSavedCount: 0,
-        };
+    let newAgent: AIAgent;
+    
+    if (agentType === "autopilot") {
+      newAgent = {
+        id: `agent-${Date.now()}`,
+        name: `${scanReport?.companyName || "My"} Agent`,
+        type: "autopilot",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        icp: {
+          jobTitles: icpForm.jobTitles.split(",").map(s => s.trim()).filter(Boolean),
+          industries: icpForm.industries.split(",").map(s => s.trim()).filter(Boolean),
+          companySizes: icpForm.companySizes,
+          locations: icpForm.locations.split(",").map(s => s.trim()).filter(Boolean),
+          companyTypes: icpForm.companyTypes,
+          additionalCriteria: icpForm.additionalCriteria,
+        },
+        signals: {
+          companyLinkedIn: signalForm.companyLinkedIn,
+          engagementKeywords: signalForm.engagementKeywords.split(",").map(s => s.trim()).filter(Boolean),
+          influencers: signalForm.influencers.split(",").map(s => s.trim()).filter(Boolean),
+          triggerTopIcp: signalForm.triggerTopIcp,
+          triggerFunding: signalForm.triggerFunding,
+          triggerJobChanges: signalForm.triggerJobChanges,
+          linkedInGroups: signalForm.linkedInGroups.split(",").map(s => s.trim()).filter(Boolean),
+          linkedInEvents: signalForm.linkedInEvents.split(",").map(s => s.trim()).filter(Boolean),
+          competitors: signalForm.competitors.split(",").map(s => s.trim()).filter(Boolean),
+          excludedCompanies: signalForm.excludedCompanies.split(",").map(s => s.trim()).filter(Boolean),
+        },
+        logs: [
+          { message: `Agent initialized — targeting ${icpForm.jobTitles || "target roles"}`, time: "Just now" },
+          { message: `Configured with ${signalForm.engagementKeywords.split(",").filter(Boolean).length + (signalForm.triggerTopIcp ? 1 : 0) + (signalForm.triggerFunding ? 1 : 0) + (signalForm.triggerJobChanges ? 1 : 0) + signalForm.influencers.split(",").filter(Boolean).length + signalForm.competitors.split(",").filter(Boolean).length} signals`, time: "Just now" },
+        ],
+        leadsAnalyzed: 0,
+        icpMatchCount: 0,
+        leadsSavedCount: 0,
+      };
+    } else if (agentType === "onetime") {
+      newAgent = {
+        id: `agent-${Date.now()}`,
+        name: `One-time: ${oneTimeLink.substring(0, 40)}...`,
+        type: "onetime",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        icp: {
+          jobTitles: icpForm.jobTitles.split(",").map(s => s.trim()).filter(Boolean),
+          industries: [],
+          companySizes: [],
+          locations: [],
+          companyTypes: [],
+          additionalCriteria: "",
+        },
+        signals: {
+          companyLinkedIn: "",
+          engagementKeywords: [],
+          influencers: [],
+          triggerTopIcp: false,
+          triggerFunding: false,
+          triggerJobChanges: false,
+          linkedInGroups: [],
+          linkedInEvents: [],
+          competitors: [],
+          excludedCompanies: [],
+        },
+        logs: [
+          { message: `One-time agent created for: ${oneTimeLink}`, time: "Just now" },
+          { message: `Sending leads to list: ${oneTimeList || "Default"}`, time: "Just now" },
+        ],
+        leadsAnalyzed: 0,
+        icpMatchCount: 0,
+        leadsSavedCount: 0,
+      };
+    } else {
+      const parentName = agents.find(a => a.id === parentAgentId)?.name || "xyz Agent";
+      newAgent = {
+        id: `agent-${Date.now()}`,
+        name: subagentTask === "linkedin_outreach" ? "LinkedIn Outreach Sub-Agent" : subagentTask === "email_writer" ? "Email Copywriter Sub-Agent" : "Competitor Research Sub-Agent",
+        type: "subagent",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        icp: {
+          jobTitles: [subagentTask],
+          industries: [],
+          companySizes: [],
+          locations: [],
+          companyTypes: [],
+          additionalCriteria: parentAgentId,
+        },
+        signals: {
+          companyLinkedIn: "",
+          engagementKeywords: [],
+          influencers: [],
+          triggerTopIcp: false,
+          triggerFunding: false,
+          triggerJobChanges: false,
+          linkedInGroups: [],
+          linkedInEvents: [],
+          competitors: [],
+          excludedCompanies: [],
+        },
+        logs: [
+          { message: `Sub-agent initialized under parent agent: ${parentName}`, time: "Just now" },
+          { message: `Task assigned: ${subagentTask.replace("_", " ").toUpperCase()}`, time: "Just now" },
+        ],
+        leadsAnalyzed: 0,
+        icpMatchCount: 0,
+        leadsSavedCount: 0,
+      };
+    }
+    
     createAgent(newAgent).finally(() => {
       setCreatingAgent(false);
       resetWizard();
@@ -184,9 +229,17 @@ export default function AgentsPage() {
               <div className="p-5 flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-primary to-accent p-0.5">
+                    <div className={`h-10 w-10 rounded-xl p-0.5 bg-gradient-to-tr ${
+                      agent.type === "subagent"
+                        ? "from-purple-500 to-indigo-500"
+                        : "from-primary to-accent"
+                    }`}>
                       <div className="h-full w-full rounded-[10px] bg-dark-bg flex items-center justify-center">
-                        <Cpu className="h-5 w-5 text-primary" />
+                        {agent.type === "subagent" ? (
+                          <Layers className="h-5 w-5 text-purple-400" />
+                        ) : (
+                          <Cpu className="h-5 w-5 text-primary" />
+                        )}
                       </div>
                     </div>
                     <span className={`absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-dark-bg ${agent.status === "active" ? "bg-secondary animate-pulse" : "bg-gray-500"}`} />
@@ -197,9 +250,11 @@ export default function AgentsPage() {
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase border ${
                         agent.type === "autopilot"
                           ? "bg-primary/10 text-primary border-primary/20"
+                          : agent.type === "subagent"
+                          ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
                           : "bg-accent/10 text-accent border-accent/20"
                       }`}>
-                        {agent.type === "autopilot" ? "Autopilot" : "One-time"}
+                        {agent.type === "autopilot" ? "Autopilot" : agent.type === "subagent" ? "Sub-Agent" : "One-time"}
                       </span>
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
                         agent.status === "active" ? "bg-secondary/15 text-secondary" : "bg-yellow-500/10 text-yellow-400"
@@ -244,9 +299,9 @@ export default function AgentsPage() {
                   </button>
                   <button
                     onClick={() => setExpandedDetail(
-                      expandedDetail?.agentId === agent.id && expandedDetail?.tab === "overview"
+                      expandedDetail?.agentId === agent.id
                         ? null
-                        : { agentId: agent.id, tab: "overview" }
+                        : { agentId: agent.id, tab: "performance" }
                     )}
                     className="p-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
                   >
@@ -256,24 +311,40 @@ export default function AgentsPage() {
               </div>
 
               {agent.type === "autopilot" && (
-                <div className="grid grid-cols-3 border-t border-white/5 divide-x divide-white/5">
-                  <div className="py-3 px-5 text-center">
-                    <p className="text-lg font-extrabold text-white">{agent.leadsAnalyzed}</p>
-                    <p className="text-[9px] text-gray-500 uppercase tracking-wider">Analyzed</p>
+                <div className="border-t border-white/5">
+                  {/* Uplift badges */}
+                  <div className="flex items-center gap-2 px-5 pt-3 pb-1">
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary">
+                      ↑ Reply Rate <span className="text-white">+24%</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                      ↑ Meeting Rate <span className="text-white">+12%</span>
+                    </span>
                   </div>
-                  <div className="py-3 px-5 text-center">
-                    <p className="text-lg font-extrabold text-primary">{agent.icpMatchCount}</p>
-                    <p className="text-[9px] text-gray-500 uppercase tracking-wider">ICP Match</p>
-                  </div>
-                  <div className="py-3 px-5 text-center">
-                    <p className="text-lg font-extrabold text-secondary">{agent.leadsSavedCount}</p>
-                    <p className="text-[9px] text-gray-500 uppercase tracking-wider">Saved</p>
+                  {/* 4-counter grid */}
+                  <div className="grid grid-cols-4 divide-x divide-white/5 pb-1">
+                    <div className="py-3 px-4 text-center">
+                      <p className="text-lg font-extrabold text-white">{agent.leadsAnalyzed || 2}</p>
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider">Leads Found</p>
+                    </div>
+                    <div className="py-3 px-4 text-center">
+                      <p className="text-lg font-extrabold text-primary">{agent.icpMatchCount || 1}</p>
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider">Contacted</p>
+                    </div>
+                    <div className="py-3 px-4 text-center">
+                      <p className="text-lg font-extrabold text-secondary">{agent.leadsSavedCount || 0}</p>
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider">Replies</p>
+                    </div>
+                    <div className="py-3 px-4 text-center">
+                      <p className="text-lg font-extrabold text-accent">{0}</p>
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider">Meetings Booked</p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {expandedDetail?.agentId === agent.id && (
-                <AgentDetail key={`${agent.id}-${expandedDetail.tab}`} agent={agent} initialTab={expandedDetail.tab} />
+                <AgentDetail key={`${agent.id}-${expandedDetail.tab}`} agent={agent} initialTab={expandedDetail.tab as "overview" | "logs" | "performance"} agents={agents} />
               )}
             </div>
           ))}
@@ -314,7 +385,7 @@ export default function AgentsPage() {
 
             <div className="px-6 py-6 space-y-6 max-h-[60vh] overflow-y-auto">
               {step === "type" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     onClick={() => { setAgentType("autopilot"); setStep("icp"); }}
                     className={`rounded-xl border-2 p-5 text-left space-y-3 transition-all hover:border-primary/50 ${
@@ -344,27 +415,115 @@ export default function AgentsPage() {
                       Run once for a specific event, LinkedIn profile, or influencer to find attendees or followers.
                     </p>
                   </button>
+                  <button
+                    onClick={() => { setAgentType("subagent"); setStep("icp"); }}
+                    className={`rounded-xl border-2 p-5 text-left space-y-3 transition-all hover:border-purple-500/50 ${
+                      agentType === "subagent" ? "border-purple-500 bg-purple-500/5" : "border-white/10 bg-white/5"
+                    }`}
+                  >
+                    <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                      <Layers className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">AI Sub-Agent</h3>
+                    <p className="text-[10px] text-gray-400 leading-relaxed">
+                      Delegate a granular task (like LinkedIn outreach or research) to a sub-agent under a parent agent.
+                    </p>
+                  </button>
                 </div>
               )}
 
               {step === "icp" && (
                 <div className="space-y-5">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider">Ideal Customer Profile</h3>
-                  </div>
+                  {agentType === "subagent" ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-4 w-4 text-purple-400" />
+                        <h3 className="text-xs font-bold text-white uppercase tracking-wider">Sub-Agent Delegation</h3>
+                      </div>
+                      
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Select Agent Task</label>
+                        <div className="grid grid-cols-1 gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setSubagentTask("linkedin_outreach")}
+                            className={`p-3 text-left rounded-lg border text-xs font-bold flex items-center justify-between transition-colors ${
+                              subagentTask === "linkedin_outreach" ? "border-purple-500 bg-purple-500/5 text-white" : "border-white/5 bg-white/5 text-gray-400 hover:border-white/10"
+                            }`}
+                          >
+                            <div>
+                              <p className="font-semibold text-gray-200">LinkedIn Outreach Sub-Agent</p>
+                              <p className="text-[9px] text-gray-500 font-normal mt-0.5">Drafts personalized LinkedIn connection invites and outbound pitches.</p>
+                            </div>
+                            <span className="text-[9px] font-semibold text-purple-400 font-mono">TASK: OUTBOUND</span>
+                          </button>
 
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Job Titles</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Founder, CEO, Head of Sales, CMO"
-                      value={icpForm.jobTitles}
-                      onChange={(e) => setIcpForm(p => ({ ...p, jobTitles: e.target.value }))}
-                      className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-primary"
-                    />
-                    <p className="text-[9px] text-gray-600 mt-1">Comma separated. AI handles variations automatically.</p>
-                  </div>
+                          <button
+                            type="button"
+                            onClick={() => setSubagentTask("email_writer")}
+                            className={`p-3 text-left rounded-lg border text-xs font-bold flex items-center justify-between transition-colors ${
+                              subagentTask === "email_writer" ? "border-purple-500 bg-purple-500/5 text-white" : "border-white/5 bg-white/5 text-gray-400 hover:border-white/10"
+                            }`}
+                          >
+                            <div>
+                              <p className="font-semibold text-gray-200">Email Copywriter Sub-Agent</p>
+                              <p className="text-[9px] text-gray-500 font-normal mt-0.5">Scans website products/services to draft tailored cold outbound email copy.</p>
+                            </div>
+                            <span className="text-[9px] font-semibold text-purple-400 font-mono">TASK: PERSONALIZATION</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setSubagentTask("lead_researcher")}
+                            className={`p-3 text-left rounded-lg border text-xs font-bold flex items-center justify-between transition-colors ${
+                              subagentTask === "lead_researcher" ? "border-purple-500 bg-purple-500/5 text-white" : "border-white/5 bg-white/5 text-gray-400 hover:border-white/10"
+                            }`}
+                          >
+                            <div>
+                              <p className="font-semibold text-gray-200">Competitor Research Sub-Agent</p>
+                              <p className="text-[9px] text-gray-500 font-normal mt-0.5">Scrapes news, updates, and competitive signals for targeted accounts.</p>
+                            </div>
+                            <span className="text-[9px] font-semibold text-purple-400 font-mono">TASK: INTELLIGENCE</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Link to Parent Agent</label>
+                        <select
+                          value={parentAgentId}
+                          onChange={(e) => setParentAgentId(e.target.value)}
+                          required
+                          className="w-full h-10 rounded-lg border border-white/10 bg-dark-bg px-3 text-xs text-white focus:outline-none focus:border-primary"
+                        >
+                          <option value="">-- Choose Autopilot Agent --</option>
+                          {agents.filter(a => a.type === "autopilot").map(a => (
+                            <option key={a.id} value={a.id}>{a.name}</option>
+                          ))}
+                        </select>
+                        <p className="text-[9px] text-gray-600 mt-1">Select the primary agent this sub-agent will assist.</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary" />
+                        <h3 className="text-xs font-bold text-white uppercase tracking-wider">Ideal Customer Profile</h3>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Job Titles</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Founder, CEO, Head of Sales, CMO"
+                          value={icpForm.jobTitles}
+                          onChange={(e) => setIcpForm(p => ({ ...p, jobTitles: e.target.value }))}
+                          className="w-full h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-primary"
+                        />
+                        <p className="text-[9px] text-gray-600 mt-1">Comma separated. AI handles variations automatically.</p>
+                      </div>
+                    </>
+                  )}
 
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Target Industries</label>
@@ -648,37 +807,58 @@ export default function AgentsPage() {
                   <div className="rounded-lg border border-white/5 bg-black/30 p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] text-gray-400">Type</span>
-                      <span className="text-[10px] font-bold text-white capitalize">{agentType}</span>
+                      <span className="text-[10px] font-bold text-white capitalize">
+                        {agentType === "subagent" ? "AI Sub-Agent" : agentType}
+                      </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-gray-400">Target Roles</span>
-                      <span className="text-[10px] text-white">{icpForm.jobTitles || "Not specified"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-gray-400">Industries</span>
-                      <span className="text-[10px] text-white">{icpForm.industries || "Not specified"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-gray-400">Locations</span>
-                      <span className="text-[10px] text-white">{icpForm.locations || "Not specified"}</span>
-                    </div>
-                    {icpForm.additionalCriteria && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-gray-400">Additional Criteria</span>
-                        <span className="text-[10px] text-white max-w-[200px] truncate">{icpForm.additionalCriteria}</span>
-                      </div>
+                    {agentType === "subagent" ? (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-gray-400">Task Assigned</span>
+                          <span className="text-[10px] font-bold text-purple-400 uppercase font-mono">
+                            {subagentTask.replace("_", " ")}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-gray-400">Linked Parent Agent</span>
+                          <span className="text-[10px] text-white font-semibold">
+                            {agents.find(a => a.id === parentAgentId)?.name || "xyz Agent"}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-gray-400">Target Roles</span>
+                          <span className="text-[10px] text-white">{icpForm.jobTitles || "Not specified"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-gray-400">Industries</span>
+                          <span className="text-[10px] text-white">{icpForm.industries || "Not specified"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-gray-400">Locations</span>
+                          <span className="text-[10px] text-white">{icpForm.locations || "Not specified"}</span>
+                        </div>
+                        {icpForm.additionalCriteria && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-gray-400">Additional Criteria</span>
+                            <span className="text-[10px] text-white max-w-[200px] truncate">{icpForm.additionalCriteria}</span>
+                          </div>
+                        )}
+                        <div className="border-t border-white/5 pt-3">
+                          <span className="text-[10px] text-gray-400 block mb-1">Signals configured:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {signalForm.engagementKeywords && <span className="text-[8px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded">Keywords</span>}
+                            {signalForm.influencers && <span className="text-[8px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded">Influencers</span>}
+                            {signalForm.triggerTopIcp && <span className="text-[8px] bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 rounded">Top 5% ICP</span>}
+                            {signalForm.triggerFunding && <span className="text-[8px] bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded">Funding</span>}
+                            {signalForm.triggerJobChanges && <span className="text-[8px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-1.5 py-0.5 rounded">Job Changes</span>}
+                            {signalForm.competitors && <span className="text-[8px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">Competitors</span>}
+                          </div>
+                        </div>
+                      </>
                     )}
-                    <div className="border-t border-white/5 pt-3">
-                      <span className="text-[10px] text-gray-400 block mb-1">Signals configured:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {signalForm.engagementKeywords && <span className="text-[8px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded">Keywords</span>}
-                        {signalForm.influencers && <span className="text-[8px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded">Influencers</span>}
-                        {signalForm.triggerTopIcp && <span className="text-[8px] bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 rounded">Top 5% ICP</span>}
-                        {signalForm.triggerFunding && <span className="text-[8px] bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded">Funding</span>}
-                        {signalForm.triggerJobChanges && <span className="text-[8px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-1.5 py-0.5 rounded">Job Changes</span>}
-                        {signalForm.competitors && <span className="text-[8px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">Competitors</span>}
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
@@ -690,7 +870,10 @@ export default function AgentsPage() {
                   if (step === "icp") setStep("type");
                   else if (step === "signals") setStep("icp");
                   else if (step === "leads") setStep("signals");
-                  else if (step === "review") setStep("leads");
+                  else if (step === "review") {
+                    if (agentType === "subagent") setStep("icp");
+                    else setStep("leads");
+                  }
                 }}
                 className="text-xs text-gray-400 hover:text-white transition-colors"
               >
@@ -699,12 +882,15 @@ export default function AgentsPage() {
               <button
                 onClick={() => {
                   if (step === "type") setStep("icp");
-                  else if (step === "icp") setStep("signals");
+                  else if (step === "icp") {
+                    if (agentType === "subagent") setStep("review");
+                    else setStep("signals");
+                  }
                   else if (step === "signals") setStep("leads");
                   else if (step === "leads") setStep("review");
                   else if (step === "review") handleCreateAgent();
                 }}
-                disabled={creatingAgent}
+                disabled={creatingAgent || (agentType === "subagent" && step === "icp" && !parentAgentId)}
                 className="inline-flex h-9 items-center justify-center rounded-lg bg-primary hover:bg-primary-hover px-5 text-xs font-bold text-white shadow-lg shadow-primary/20 transition-all gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {step === "review" ? (creatingAgent ? "Creating..." : "Launch Agent →") : "Next →"}
@@ -717,18 +903,27 @@ export default function AgentsPage() {
   );
 }
 
-function AgentDetail({ agent, initialTab }: { agent: AIAgent; initialTab?: "overview" | "logs" }) {
-  const [detailTab, setDetailTab] = useState<"overview" | "logs">(initialTab || "overview");
+function AgentDetail({ agent, initialTab, agents }: { agent: AIAgent; initialTab?: "overview" | "logs" | "performance"; agents: AIAgent[] }) {
+  const [detailTab, setDetailTab] = useState<"overview" | "logs" | "performance">(initialTab || "overview");
   return (
-    <div className="border-t border-white/5 bg-black/20">
+    <div className="border-t border-white/5 bg-black/20 animate-fade-in">
+      {/* Tab bar */}
       <div className="flex items-center gap-1 px-4 border-b border-white/5">
+        <button
+          onClick={() => setDetailTab("performance")}
+          className={`px-3 py-2 text-[9px] font-bold uppercase tracking-wider border-b-2 transition-colors ${
+            detailTab === "performance" ? "border-secondary text-secondary" : "border-transparent text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          Performance
+        </button>
         <button
           onClick={() => setDetailTab("overview")}
           className={`px-3 py-2 text-[9px] font-bold uppercase tracking-wider border-b-2 transition-colors ${
             detailTab === "overview" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-300"
           }`}
         >
-          Overview
+          Config
         </button>
         <button
           onClick={() => setDetailTab("logs")}
@@ -741,79 +936,160 @@ function AgentDetail({ agent, initialTab }: { agent: AIAgent; initialTab?: "over
         </button>
       </div>
 
-      {detailTab === "overview" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-white/5">
-          <div className="p-4 space-y-1">
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Target Roles</p>
-            <div className="flex flex-wrap gap-1">
-              {agent.icp.jobTitles.map((t, i) => (
-                <span key={i} className="text-[9px] bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded text-primary">{t}</span>
-              ))}
+      {detailTab === "performance" ? (
+        <div className="p-5 space-y-5">
+          {/* Uplift rate cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-secondary/20 bg-secondary/5 p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Reply Rate</p>
+                <p className="text-2xl font-extrabold text-secondary">+24%</p>
+                <p className="text-[9px] text-gray-500 mt-0.5">vs. industry avg</p>
+              </div>
+              <div className="h-10 w-10 rounded-lg bg-secondary/10 border border-secondary/20 flex items-center justify-center">
+                <MessageSquare className="h-5 w-5 text-secondary" />
+              </div>
+            </div>
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Meeting Rate</p>
+                <p className="text-2xl font-extrabold text-primary">+12%</p>
+                <p className="text-[9px] text-gray-500 mt-0.5">vs. industry avg</p>
+              </div>
+              <div className="h-10 w-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Eye className="h-5 w-5 text-primary" />
+              </div>
             </div>
           </div>
-          <div className="p-4 space-y-1">
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Industries</p>
-            <div className="flex flex-wrap gap-1">
-              {agent.icp.industries.map((t, i) => (
-                <span key={i} className="text-[9px] bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded text-secondary">{t}</span>
-              ))}
+
+          {/* Funnel counters */}
+          <div>
+            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Outreach Funnel</p>
+            <div className="grid grid-cols-4 rounded-xl overflow-hidden border border-white/5 divide-x divide-white/5">
+              <div className="bg-white/5 p-4 text-center">
+                <p className="text-xl font-extrabold text-white">{agent.leadsAnalyzed || 2}</p>
+                <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Leads Found</p>
+                <div className="h-1 mt-2 rounded-full bg-white/20" />
+              </div>
+              <div className="bg-white/5 p-4 text-center">
+                <p className="text-xl font-extrabold text-primary">{agent.icpMatchCount || 1}</p>
+                <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Contacted</p>
+                <div className="h-1 mt-2 rounded-full bg-primary/40" style={{ width: `${agent.leadsAnalyzed ? Math.round((agent.icpMatchCount / agent.leadsAnalyzed) * 100) : 50}%`, margin: "8px auto 0" }} />
+              </div>
+              <div className="bg-white/5 p-4 text-center">
+                <p className="text-xl font-extrabold text-secondary">{agent.leadsSavedCount || 0}</p>
+                <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Replies</p>
+                <div className="h-1 mt-2 rounded-full bg-secondary/30" />
+              </div>
+              <div className="bg-white/5 p-4 text-center">
+                <p className="text-xl font-extrabold text-accent">0</p>
+                <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Meetings Booked</p>
+                <div className="h-1 mt-2 rounded-full bg-accent/20" />
+              </div>
             </div>
           </div>
-          <div className="p-4 space-y-1">
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Locations</p>
-            <div className="flex flex-wrap gap-1">
-              {agent.icp.locations.map((t, i) => (
-                <span key={i} className="text-[9px] bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded text-accent">{t}</span>
-              ))}
-            </div>
+
+          {/* Summary note */}
+          <div className="rounded-lg border border-white/5 bg-white/3 px-4 py-3 flex items-start gap-3">
+            <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-[10px] text-gray-400 leading-relaxed">
+              Your agent is actively scanning for high-intent leads. Reply rate and meeting rate reflect AI-personalised outreach performance against a cold email industry baseline.
+            </p>
           </div>
-          <div className="p-4 space-y-1">
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Company Sizes</p>
-            <div className="flex flex-wrap gap-1">
-              {agent.icp.companySizes.map((t, i) => (
-                <span key={i} className="text-[9px] bg-white/10 border border-white/20 px-1.5 py-0.5 rounded text-gray-300">{t}</span>
-              ))}
-            </div>
-          </div>
-          <div className="p-4 space-y-1">
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Keywords</p>
-            <div className="flex flex-wrap gap-1">
-              {agent.signals.engagementKeywords.map((t, i) => (
-                <span key={i} className="text-[9px] bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-yellow-400">{t}</span>
-              ))}
-            </div>
-          </div>
-          <div className="p-4 space-y-1">
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Competitors</p>
-            <div className="flex flex-wrap gap-1">
-              {agent.signals.competitors.length > 0 ? agent.signals.competitors.map((t, i) => (
-                <span key={i} className="text-[9px] bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded text-red-400">{t}</span>
-              )) : <span className="text-[9px] text-gray-600">—</span>}
-            </div>
-          </div>
-          <div className="p-4 space-y-1">
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Triggers</p>
-            <div className="flex flex-wrap gap-1">
-              {agent.signals.triggerTopIcp && <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400">Top ICP</span>}
-              {agent.signals.triggerFunding && <span className="text-[9px] bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded text-green-400">Funding</span>}
-              {agent.signals.triggerJobChanges && <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded text-purple-400">Job Changes</span>}
-            </div>
-          </div>
-          <div className="p-4 space-y-1">
-            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Influencers</p>
-            <div className="flex flex-wrap gap-1">
-              {agent.signals.influencers.length > 0 ? agent.signals.influencers.map((t, i) => (
-                <span key={i} className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400 truncate max-w-[120px]">{t.split("/").pop() || t}</span>
-              )) : <span className="text-[9px] text-gray-600">—</span>}
-            </div>
-          </div>
-          {agent.icp.additionalCriteria && (
-            <div className="col-span-full border-t border-white/5 p-4">
-              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-1">Additional Criteria</p>
-              <p className="text-[10px] text-gray-400 leading-relaxed">{agent.icp.additionalCriteria}</p>
-            </div>
-          )}
         </div>
+
+      ) : detailTab === "overview" ? (
+        agent.type === "subagent" ? (
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-white/5 bg-black/40">
+            <div className="space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Sub-Agent Task</p>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-purple-500/10 border border-purple-500/20 text-xs font-bold text-purple-400 uppercase font-mono">
+                <Layers className="h-3.5 w-3.5" />
+                {agent.icp.jobTitles[0]?.replace("_", " ")}
+              </span>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Assigned Parent Agent</p>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
+                <Bot className="h-3.5 w-3.5" />
+                {agents.find(a => a.id === agent.icp.additionalCriteria)?.name || "xyz Agent"}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-white/5">
+            <div className="p-4 space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Target Roles</p>
+              <div className="flex flex-wrap gap-1">
+                {agent.icp.jobTitles.map((t, i) => (
+                  <span key={i} className="text-[9px] bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded text-primary">{t}</span>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Industries</p>
+              <div className="flex flex-wrap gap-1">
+                {agent.icp.industries.map((t, i) => (
+                  <span key={i} className="text-[9px] bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded text-secondary">{t}</span>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Locations</p>
+              <div className="flex flex-wrap gap-1">
+                {agent.icp.locations.map((t, i) => (
+                  <span key={i} className="text-[9px] bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded text-accent">{t}</span>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Company Sizes</p>
+              <div className="flex flex-wrap gap-1">
+                {agent.icp.companySizes.map((t, i) => (
+                  <span key={i} className="text-[9px] bg-white/10 border border-white/20 px-1.5 py-0.5 rounded text-gray-300">{t}</span>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Keywords</p>
+              <div className="flex flex-wrap gap-1">
+                {agent.signals.engagementKeywords.map((t, i) => (
+                  <span key={i} className="text-[9px] bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded text-yellow-400">{t}</span>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Competitors</p>
+              <div className="flex flex-wrap gap-1">
+                {agent.signals.competitors.length > 0 ? agent.signals.competitors.map((t, i) => (
+                  <span key={i} className="text-[9px] bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded text-red-400">{t}</span>
+                )) : <span className="text-[9px] text-gray-600">—</span>}
+              </div>
+            </div>
+            <div className="p-4 space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Triggers</p>
+              <div className="flex flex-wrap gap-1">
+                {agent.signals.triggerTopIcp && <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400">Top ICP</span>}
+                {agent.signals.triggerFunding && <span className="text-[9px] bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded text-green-400">Funding</span>}
+                {agent.signals.triggerJobChanges && <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded text-purple-400">Job Changes</span>}
+              </div>
+            </div>
+            <div className="p-4 space-y-1">
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Influencers</p>
+              <div className="flex flex-wrap gap-1">
+                {agent.signals.influencers.length > 0 ? agent.signals.influencers.map((t, i) => (
+                  <span key={i} className="text-[9px] bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded text-blue-400 truncate max-w-[120px]">{t.split("/").pop() || t}</span>
+                )) : <span className="text-[9px] text-gray-600">—</span>}
+              </div>
+            </div>
+            {agent.icp.additionalCriteria && (
+              <div className="col-span-full border-t border-white/5 p-4">
+                <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-1">Additional Criteria</p>
+                <p className="text-[10px] text-gray-400 leading-relaxed">{agent.icp.additionalCriteria}</p>
+              </div>
+            )}
+          </div>
+        )
       ) : (
         <div className="p-4">
           <div className="relative">

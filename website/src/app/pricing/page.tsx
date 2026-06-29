@@ -116,7 +116,7 @@ function PricingContent() {
               onClick={handleSubscribeClick}
               className="w-full inline-flex h-11 items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all"
             >
-              {isLoggedIn ? "Subscribe to Pro Plan" : "Try Gojiberry for free →"}
+              {isLoggedIn ? "Subscribe to Pro Plan" : "Try xyz for free →"}
             </button>
 
             <div className="border-t border-primary/10 pt-6 space-y-3">

@@ -72,7 +72,7 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
               <Sparkles className="h-4.5 w-4.5 text-primary" />
             </div>
             <span className="text-base font-bold text-white tracking-tight">
-              Gojiberry<span className="text-primary">.ai</span>
+              xyz<span className="text-primary">.ai</span>
             </span>
           </Link>
           <span className="rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-primary uppercase">
@@ -222,7 +222,7 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 border border-primary/40">
             <Sparkles className="h-4 w-4 text-primary" />
           </div>
-          <span className="text-sm font-bold text-white">Gojiberry<span className="text-primary">.ai</span></span>
+          <span className="text-sm font-bold text-white">xyz<span className="text-primary">.ai</span></span>
         </Link>
         
         <div className="flex items-center gap-3">

@@ -63,7 +63,7 @@ export default function FeaturesPage() {
             One agent. Replaces your entire outreach stack.
           </h1>
           <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">
-            Stop paying for tools that don't talk to each other. Gojiberry handles it end to end, for a fraction of the price.
+            Stop paying for tools that don't talk to each other. xyz handles it end to end, for a fraction of the price.
           </p>
         </div>
       </header>

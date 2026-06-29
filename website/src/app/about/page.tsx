@@ -18,7 +18,7 @@ export default function AboutPage() {
             Backed by Y Combinator P26
           </h1>
           <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">
-            Gojiberry helps 2,000+ sales teams find high-intent leads and run multichannel outreach automatically.
+            xyz helps 2,000+ sales teams find high-intent leads and run multichannel outreach automatically.
           </p>
         </div>
       </header>
@@ -26,15 +26,15 @@ export default function AboutPage() {
       <section className="py-12 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white">Why We Built Gojiberry</h2>
+            <h2 className="text-2xl font-bold text-white">Why We Built xyz</h2>
             <p className="text-xs text-gray-300 leading-relaxed">
               Sales teams spend hours every week building lists, guessing intent, enriching contacts, writing repetitive messages, and deciding who to contact next.
             </p>
             <p className="text-xs text-gray-300 leading-relaxed">
-              Gojiberry was built to change that. Instead of uploading cold lists and writing generic sequences, Gojiberry detects buying signals, matches prospects against your ICP, and launches relevant LinkedIn and email outreach — automatically.
+              xyz was built to change that. Instead of uploading cold lists and writing generic sequences, xyz detects buying signals, matches prospects against your ICP, and launches relevant LinkedIn and email outreach — automatically.
             </p>
             <p className="text-xs text-gray-300 leading-relaxed">
-              The difference is simple: automation tools execute your outbound. Gojiberry helps run it.
+              The difference is simple: automation tools execute your outbound. xyz helps run it.
             </p>
           </div>
           <div className="rounded-2xl border border-white/5 bg-dark-bg/60 p-8 glass-panel space-y-6">

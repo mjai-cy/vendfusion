@@ -14,6 +14,7 @@ import { AgentModule } from './modules/agent/agent.module';
 import { LeadListModule } from './modules/lead-list/lead-list.module';
 import { CampaignModule } from './modules/campaign/campaign.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { BillingModule } from './modules/billing/billing.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SettingsModule } from './modules/settings/settings.module';
     LeadListModule,
     CampaignModule,
     SettingsModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

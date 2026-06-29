@@ -111,7 +111,7 @@ function OnboardingContent() {
             <Sparkles className="h-4.5 w-4.5 text-primary" />
           </div>
           <span className="text-lg font-bold tracking-tight text-white">
-            Gojiberry<span className="text-primary">.ai</span>
+            xyz<span className="text-primary">.ai</span>
           </span>
         </Link>
         <span className="text-xs text-gray-500 font-mono">SETUP</span>

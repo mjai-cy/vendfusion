@@ -13,14 +13,14 @@ export const Footer: React.FC = () => {
                 <Sparkles className="h-4.5 w-4.5 text-primary" />
               </div>
               <span className="text-lg font-bold tracking-tight text-white">
-                Gojiberry<span className="text-primary">.ai</span>
+                xyz<span className="text-primary">.ai</span>
               </span>
             </Link>
             <p className="text-xs text-gray-400 leading-relaxed">
               Turn your website into an AI sales agent that finds high-intent leads and contacts them for you.
             </p>
             <p className="text-xs text-gray-500 font-medium">
-              &copy; 2026 Gojiberry.ai. All rights reserved.
+              &copy; 2026 xyz.ai. All rights reserved.
             </p>
           </div>
 
@@ -45,7 +45,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-3">
             <h4 className="text-sm font-semibold text-gray-200">Contact & Support</h4>
             <ul className="space-y-2 text-xs text-gray-400">
-              <li>Email: <a href="mailto:support@gojiberry.ai" className="hover:text-primary transition-colors">support@gojiberry.ai</a></li>
+              <li>Email: <a href="mailto:support@xyz.ai" className="hover:text-primary transition-colors">support@xyz.ai</a></li>
               <li>Live chat support</li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Online Support Form</Link></li>
             </ul>

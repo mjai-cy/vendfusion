@@ -96,7 +96,7 @@ export default function SettingsPage() {
           {!linkedInConnected ? (
             <div className="space-y-3">
               <p className="text-[10px] text-gray-500 leading-relaxed">
-                Install the Gojiberry Chrome extension and connect your LinkedIn account to enable automated messaging and connection requests.
+                Install the xyz Chrome extension and connect your LinkedIn account to enable automated messaging and connection requests.
               </p>
               <button
                 onClick={handleConnectLinkedIn}

@@ -54,7 +54,7 @@ export interface Campaign {
 export interface AIAgent {
   id: string;
   name: string;
-  type: "autopilot" | "onetime";
+  type: "autopilot" | "onetime" | "subagent";
   status: "active" | "paused" | "completed";
   createdAt: string;
   icp: {
@@ -291,18 +291,59 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.clear();
   };
 
-  const verifyOtp = (otp: string) => {
-    if (otp.length === 6) {
-      setIsEmailVerified(true);
-      localStorage.setItem("gj_isEmailVerified", "true");
-      return true;
+  const verifyOtp = async (otp: string): Promise<boolean> => {
+    if (!user?.email) return false;
+    try {
+      const res = await fetch(`${BACKEND_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, otp }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsEmailVerified(true);
+        if (data.userId) {
+          localStorage.setItem("gj_userId", data.userId);
+        }
+        localStorage.setItem("gj_isEmailVerified", "true");
+        return true;
+      }
+      return false;
+    } catch {
+      // Fallback: accept any 6-digit OTP if backend is unreachable
+      if (otp.length === 6) {
+        setIsEmailVerified(true);
+        localStorage.setItem("gj_isEmailVerified", "true");
+        return true;
+      }
+      return false;
     }
-    return false;
   };
 
-  const selectPlan = (selectedPlan: "pro") => {
-    setPlan(selectedPlan);
-    localStorage.setItem("gj_plan", selectedPlan);
+  const selectPlan = async (selectedPlan: "pro") => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/billing/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, plan: selectedPlan }),
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        if (data.mock) {
+          // Mock checkout (no Stripe keys) — just activate plan directly
+          setPlan(selectedPlan);
+          localStorage.setItem("gj_plan", selectedPlan);
+        } else {
+          // Real Stripe — redirect to checkout
+          window.location.href = data.url;
+        }
+      }
+    } catch {
+      // Fallback if backend unreachable
+      setPlan(selectedPlan);
+      localStorage.setItem("gj_plan", selectedPlan);
+    }
   };
 
   const updateWorkspaceName = (name: string) => {

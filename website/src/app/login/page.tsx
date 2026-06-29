@@ -219,7 +219,7 @@ export default function LoginPage() {
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <span className="text-xl font-bold tracking-tight text-white">
-              Gojiberry<span className="text-primary">.ai</span>
+              xyz<span className="text-primary">.ai</span>
             </span>
           </Link>
         </div>
@@ -229,7 +229,7 @@ export default function LoginPage() {
             Your AI agent finds high intent leads and contacts them for you.
           </h2>
           <p className="text-gray-400 text-xs leading-relaxed">
-            Enter your website. Gojiberry learns your business, identifies your best prospects, and runs multichannel outreach automatically.
+            Enter your website. xyz learns your business, identifies your best prospects, and runs multichannel outreach automatically.
           </p>
         </div>
 

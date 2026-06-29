@@ -92,7 +92,7 @@ function SignupForm() {
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <span className="text-xl font-bold tracking-tight text-white">
-              Gojiberry<span className="text-primary">.ai</span>
+              xyz<span className="text-primary">.ai</span>
             </span>
           </Link>
         </div>
@@ -102,7 +102,7 @@ function SignupForm() {
             Your AI agent finds high intent leads and contacts them for you.
           </h2>
           <p className="text-gray-400 text-sm">
-            Enter your website. Gojiberry learns your business, identifies your best prospects, and runs multichannel outreach automatically.
+            Enter your website. xyz learns your business, identifies your best prospects, and runs multichannel outreach automatically.
           </p>
 
           <div className="space-y-3 pt-4 border-t border-white/5 text-xs text-gray-400">
