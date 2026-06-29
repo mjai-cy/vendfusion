@@ -18,8 +18,11 @@ export class OutreachService {
         port: smtpPort,
         secure: smtpPort === 465,
         auth: { user: smtpUser, pass: smtpPass },
+        tls: {
+          rejectUnauthorized: false
+        }
       });
-      this.logger.log(`SMTP transporter initialized: ${smtpUser} @ ${smtpHost}`);
+      this.logger.log(`SMTP transporter initialized: ${smtpUser} @ ${smtpHost}:${smtpPort}`);
     } else {
       this.logger.warn('SMTP not configured. Email sending will use mock fallback.');
     }

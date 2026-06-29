@@ -7,7 +7,7 @@ export class AuthService {
 
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async sendOtp(email: string): Promise<{ success: boolean; message: string }> {
+  async sendOtp(email: string): Promise<{ success: boolean; message: string; mockOtp?: string }> {
     this.logger.log(`[Auth] Sending OTP to ${email} via Supabase`);
     return this.supabaseService.sendOtp(email);
   }
