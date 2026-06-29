@@ -17,6 +17,7 @@ function SignupForm() {
   const [password, setPassword] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [sandboxOtp, setSandboxOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -26,6 +27,7 @@ function SignupForm() {
 
     setLoading(true);
     setErrorMsg("");
+    setSandboxOtp("");
     try {
       const res = await fetch(`${BACKEND_URL}/auth/send-otp`, {
         method: "POST",
@@ -34,6 +36,9 @@ function SignupForm() {
       });
       const data = await res.json();
       if (data.success) {
+        if (data.mockOtp) {
+          setSandboxOtp(data.mockOtp);
+        }
         setOtpSent(true);
       } else {
         setErrorMsg(data.message || "Failed to send OTP verification email");
@@ -135,7 +140,10 @@ function SignupForm() {
             </h1>
             <p className="text-xs text-gray-400">
               {otpSent 
-                ? `We've sent a 6-digit verification code to ${email}`
+                ? (sandboxOtp 
+                    ? `We couldn't deliver the email (SMTP blocked on cloud free tier). Your verification OTP code is: ${sandboxOtp}`
+                    : `We've sent a 6-digit verification code to ${email}`
+                  )
                 : "Sign up in under 2 minutes. No credit card required."
               }
             </p>

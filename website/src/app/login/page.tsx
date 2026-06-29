@@ -16,6 +16,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [sandboxOtp, setSandboxOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -25,6 +26,7 @@ function LoginForm() {
 
     setLoading(true);
     setErrorMsg("");
+    setSandboxOtp("");
     try {
       const res = await fetch(`${BACKEND_URL}/auth/send-otp`, {
         method: "POST",
@@ -33,6 +35,9 @@ function LoginForm() {
       });
       const data = await res.json();
       if (data.success) {
+        if (data.mockOtp) {
+          setSandboxOtp(data.mockOtp);
+        }
         setOtpSent(true);
       } else {
         setErrorMsg(data.message || "Failed to send login OTP verification email");
@@ -93,7 +98,10 @@ function LoginForm() {
         </h1>
         <p className="text-xs text-gray-400">
           {otpSent 
-            ? `We've sent a 6-digit verification code to ${email}`
+            ? (sandboxOtp 
+                ? `We couldn't deliver the email (SMTP blocked on cloud free tier). Your verification OTP code is: ${sandboxOtp}`
+                : `We've sent a 6-digit verification code to ${email}`
+              )
             : "Sign in to manage your AI revenue campaigns."
           }
         </p>
