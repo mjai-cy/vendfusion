@@ -13,8 +13,30 @@ export class SettingsService {
   ) {}
 
   async getSettings(id: string) {
+    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (!isUuid) {
+      return {
+        linkedInConnected: false,
+        linkedInWeeklyLimit: 100,
+        linkedInActiveDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        autoEnrichEmails: false,
+        autoEnrichPhones: false,
+        autoGenerateMessages: false,
+        excludeServiceProviders: false,
+      };
+    }
     const ws = await this.repo.findOne({ where: { id } });
-    if (!ws) throw new NotFoundException(`Workspace ${id} not found`);
+    if (!ws) {
+      return {
+        linkedInConnected: false,
+        linkedInWeeklyLimit: 100,
+        linkedInActiveDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        autoEnrichEmails: false,
+        autoEnrichPhones: false,
+        autoGenerateMessages: false,
+        excludeServiceProviders: false,
+      };
+    }
     return {
       linkedInConnected: ws.linkedInConnected,
       linkedInWeeklyLimit: ws.linkedInWeeklyLimit,
@@ -35,8 +57,16 @@ export class SettingsService {
     autoGenerateMessages?: boolean;
     excludeServiceProviders?: boolean;
   }) {
+    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (!isUuid) {
+      this.logger.warn(`Ignoring settings update for non-UUID workspace ID: ${id}`);
+      return { success: true };
+    }
     const ws = await this.repo.findOne({ where: { id } });
-    if (!ws) throw new NotFoundException(`Workspace ${id} not found`);
+    if (!ws) {
+      this.logger.warn(`Workspace ${id} not found for settings update`);
+      return { success: false };
+    }
     Object.assign(ws, data);
     const saved = await this.repo.save(ws);
     this.logger.log(`Settings updated for workspace ${id}`);
