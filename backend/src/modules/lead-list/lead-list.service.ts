@@ -23,7 +23,9 @@ export class LeadListService {
   }
 
   async create(data: Partial<LeadList>): Promise<LeadList> {
-    const list = this.repo.create(data);
+    const { id, ...rest } = data;
+    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const list = this.repo.create(isUuid ? data : rest);
     const saved = await this.repo.save(list);
     this.logger.log(`LeadList created: ${saved.id} — ${saved.name}`);
     return saved;

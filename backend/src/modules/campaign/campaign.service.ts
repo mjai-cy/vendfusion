@@ -23,7 +23,9 @@ export class CampaignService {
   }
 
   async create(data: Partial<Campaign>): Promise<Campaign> {
-    const campaign = this.repo.create(data);
+    const { id, ...rest } = data;
+    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const campaign = this.repo.create(isUuid ? data : rest);
     const saved = await this.repo.save(campaign);
     this.logger.log(`Campaign created: ${saved.id} — ${saved.name}`);
     return saved;
