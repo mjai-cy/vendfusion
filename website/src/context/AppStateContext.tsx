@@ -200,13 +200,52 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const linkedInActiveDays = activeWorkspace?.linkedInActiveDays ?? ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const workspaceName = activeWorkspace?.name ?? "No Workspace";
 
-  const updateActiveWorkspace = (updater: (ws: Workspace) => Workspace) => {
-    if (!activeWorkspaceId) return;
+  const updateWorkspaceById = (wsId: string, updater: (ws: Workspace) => Workspace) => {
     setWorkspaces(prev => {
-      const updated = prev.map(ws => ws.id === activeWorkspaceId ? updater(ws) : ws);
+      const idx = prev.findIndex(ws => ws.id === wsId);
+      if (idx === -1) return prev;
+      const updated = [...prev];
+      updated[idx] = updater(updated[idx]);
       localStorage.setItem("gj_workspaces", JSON.stringify(updated));
       return updated;
     });
+  };
+
+  const updateActiveWorkspace = (updater: (ws: Workspace) => Workspace) => {
+    if (!activeWorkspaceId) return;
+    updateWorkspaceById(activeWorkspaceId, updater);
+  };
+
+  const ensureWorkspace = () => {
+    if (activeWorkspaceId) return activeWorkspaceId;
+    const newWs: Workspace = {
+      id: `ws-${Date.now()}`,
+      name: "My Workspace",
+      domain: "",
+      createdAt: new Date().toISOString(),
+      scanReport: null,
+      leads: [],
+      leadSearchesThisMonth: 0,
+      aiMessagesThisMonth: 0,
+      agents: [],
+      campaigns: [],
+      leadLists: [],
+      linkedInConnected: false,
+      linkedInWeeklyLimit: 100,
+      linkedInActiveDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      autoEnrichEmails: false,
+      autoEnrichPhones: false,
+      autoGenerateMessages: false,
+      excludeServiceProviders: false,
+    };
+    setWorkspaces(prev => {
+      const updated = [newWs, ...prev];
+      localStorage.setItem("gj_workspaces", JSON.stringify(updated));
+      return updated;
+    });
+    setActiveWorkspaceId(newWs.id);
+    localStorage.setItem("gj_activeWorkspaceId", newWs.id);
+    return newWs.id;
   };
 
   useEffect(() => {
@@ -420,13 +459,14 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createAgent = async (agent: AIAgent) => {
-    updateActiveWorkspace(ws => ({
+    const wsId = ensureWorkspace();
+    updateWorkspaceById(wsId, ws => ({
       ...ws,
       agents: [...(ws.agents || []), agent],
     }));
-    const data = await apiCall('/agents', 'POST', { ...agent, workspaceId: activeWorkspaceId });
+    const data = await apiCall('/agents', 'POST', { ...agent, workspaceId: wsId });
     if (data && data.id !== agent.id) {
-      updateActiveWorkspace(ws => ({
+      updateWorkspaceById(wsId, ws => ({
         ...ws,
         agents: (ws.agents || []).map(a => a.id === agent.id ? { ...a, id: data.id } : a),
       }));
@@ -457,13 +497,14 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createCampaign = async (campaign: Campaign) => {
-    updateActiveWorkspace(ws => ({
+    const wsId = ensureWorkspace();
+    updateWorkspaceById(wsId, ws => ({
       ...ws,
       campaigns: [...(ws.campaigns || []), campaign],
     }));
-    const data = await apiCall('/campaigns', 'POST', { ...campaign, workspaceId: activeWorkspaceId });
+    const data = await apiCall('/campaigns', 'POST', { ...campaign, workspaceId: wsId });
     if (data && data.id !== campaign.id) {
-      updateActiveWorkspace(ws => ({
+      updateWorkspaceById(wsId, ws => ({
         ...ws,
         campaigns: (ws.campaigns || []).map(c => c.id === campaign.id ? { ...c, id: data.id } : c),
       }));
@@ -494,13 +535,14 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createLeadList = async (list: LeadList) => {
-    updateActiveWorkspace(ws => ({
+    const wsId = ensureWorkspace();
+    updateWorkspaceById(wsId, ws => ({
       ...ws,
       leadLists: [...(ws.leadLists || []), list],
     }));
-    const data = await apiCall('/lead-lists', 'POST', { ...list, workspaceId: activeWorkspaceId });
+    const data = await apiCall('/lead-lists', 'POST', { ...list, workspaceId: wsId });
     if (data && data.id !== list.id) {
-      updateActiveWorkspace(ws => ({
+      updateWorkspaceById(wsId, ws => ({
         ...ws,
         leadLists: (ws.leadLists || []).map(l => l.id === list.id ? { ...l, id: data.id } : l),
       }));
