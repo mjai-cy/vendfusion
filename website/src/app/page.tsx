@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { useAppState } from "@/context/AppStateContext";
 import { 
   Globe, Sparkles, ArrowRight, Check, ChevronDown, Star
 } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
+  const { isLoggedIn, plan } = useAppState();
   const [urlInput, setUrlInput] = useState("");
   const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
   const [activeFeatureTab, setActiveFeatureTab] = useState(0);
@@ -26,7 +28,16 @@ export default function Home() {
     if (!/^https?:\/\//i.test(targetUrl)) {
       targetUrl = "https://" + targetUrl;
     }
-    router.push(`/signup?url=${encodeURIComponent(targetUrl)}`);
+    
+    if (isLoggedIn) {
+      if (plan === "pro") {
+        router.push(`/onboarding?url=${encodeURIComponent(targetUrl)}`);
+      } else {
+        router.push(`/pricing?url=${encodeURIComponent(targetUrl)}`);
+      }
+    } else {
+      router.push(`/signup?url=${encodeURIComponent(targetUrl)}`);
+    }
   };
 
   return (
