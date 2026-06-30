@@ -17,7 +17,6 @@ function SignupForm() {
   const [password, setPassword] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [sandboxOtp, setSandboxOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -27,27 +26,18 @@ function SignupForm() {
 
     setLoading(true);
     setErrorMsg("");
-    setSandboxOtp("");
     try {
-      const res = await fetch(`${BACKEND_URL}/auth/send-otp`, {
+      // Use /auth/signup to create account with password, which also sends the OTP
+      const res = await fetch(`${BACKEND_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, password, name }),
       });
       const data = await res.json();
       if (data.success) {
-        if (data.mockOtp) {
-          setSandboxOtp(data.mockOtp);
-        }
         setOtpSent(true);
       } else {
-        // If real email sending fails, allow signup fallback with mock OTP so they are not blocked
-        if (data.mockOtp) {
-          setSandboxOtp(data.mockOtp);
-          setOtpSent(true);
-        } else {
-          setErrorMsg(data.message || "Failed to send OTP verification email");
-        }
+        setErrorMsg(data.message || "Failed to create account. Please try again.");
       }
     } catch (err) {
       setErrorMsg("Network connection error. Is the backend service online?");

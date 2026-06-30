@@ -35,30 +35,32 @@ export interface PersonaResult {
 export class ScanService {
   private readonly logger = new Logger(ScanService.name);
   private readonly geminiKey = process.env.GEMINI_API_KEY || '';
-  private readonly geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
-  constructor(private readonly apolloService: ApolloService) {}
-
-  // ─── Gemini AI helper ────────────────────────────────────────────────────
-  private async askGemini(prompt: string): Promise<string> {
-    if (!this.geminiKey) throw new Error('No Gemini API key configured');
-
-    const res = await fetch(`${this.geminiUrl}?key=${this.geminiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Gemini API ${res.status}: ${err}`);
+  constructor(private readonly apolloService: ApolloService) {
+    if (!this.geminiKey) {
+      this.logger.warn('[Scan] GEMINI_API_KEY not set — website scanning will be unavailable.');
+    } else {
+      this.logger.log(`[Scan] Gemini API key loaded (prefix: ${this.geminiKey.substring(0, 6)}...).`);
     }
+  }
 
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  // ─── Gemini AI helper (uses @google/generative-ai SDK) ─────────────────────
+  private async askGemini(prompt: string): Promise<string> {
+    if (!this.geminiKey) throw new Error('GEMINI_API_KEY is not configured. Add it to your .env file.');
+
+    try {
+      // Use the official SDK — handles both legacy (AIza) and newer (AQ.) key formats
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(this.geminiKey);
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
+      });
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim();
+    } catch (err: any) {
+      throw new Error(`Gemini SDK error: ${err.message}`);
+    }
   }
 
   // ─── Fetch website HTML ───────────────────────────────────────────────────

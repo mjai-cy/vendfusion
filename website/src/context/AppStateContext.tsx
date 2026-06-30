@@ -305,12 +305,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       return false;
     } catch {
-      // Fallback: accept any 6-digit OTP if backend is unreachable
-      if (otp.length === 6) {
-        setIsEmailVerified(true);
-        localStorage.setItem("gj_isEmailVerified", "true");
-        return true;
-      }
+      // Security: do NOT accept OTP if backend is unreachable — fail closed
       return false;
     }
   };

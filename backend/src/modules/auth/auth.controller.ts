@@ -5,6 +5,19 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // ─── Signup: creates account with password + sends verification OTP ───────
+  @Post('signup')
+  async signup(@Body('email') email: string, @Body('password') password: string, @Body('name') name: string) {
+    if (!email || !password) {
+      return { success: false, message: 'Email and password are required' };
+    }
+    if (password.length < 6) {
+      return { success: false, message: 'Password must be at least 6 characters' };
+    }
+    return this.authService.signUpWithPassword(email, password, name);
+  }
+
+  // ─── Login: sends OTP for existing users ─────────────────────────────────
   @Post('send-otp')
   async sendOtp(@Body('email') email: string) {
     if (!email) {
@@ -13,6 +26,7 @@ export class AuthController {
     return this.authService.sendOtp(email);
   }
 
+  // ─── Verify OTP (both signup and login) ──────────────────────────────────
   @Post('verify-otp')
   async verifyOtp(@Body('email') email: string, @Body('otp') otp: string) {
     if (!email || !otp) {

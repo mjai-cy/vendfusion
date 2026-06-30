@@ -63,7 +63,7 @@ function LoginForm() {
       });
       const data = await res.json();
       if (data.success) {
-        login(email, "Jane Doe");
+        login(email, data.name || email.split("@")[0]);
         
         const urlParam = searchParams.get("url") || searchParams.get("domain");
 

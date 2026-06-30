@@ -5,9 +5,11 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
   private client: SupabaseClient | null = null;
+  private adminClient: SupabaseClient | null = null;
 
   constructor() {}
 
+  // ─── Anon client — used only for Auth operations ──────────────────────────
   private get supabase(): SupabaseClient {
     if (!this.client) {
       const url = process.env.SUPABASE_URL;
@@ -20,13 +22,51 @@ export class SupabaseService {
     return this.client;
   }
 
-  // ─── Auth: Send OTP via Supabase Auth ──────────────────────────────────────
+  // ─── Service-role client — bypasses RLS, used for all DB writes ──────────
+  private get adminSupabase(): SupabaseClient {
+    if (!this.adminClient) {
+      const url = process.env.SUPABASE_URL;
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!url || !serviceKey) {
+        this.logger.warn('[Supabase] SUPABASE_SERVICE_ROLE_KEY not set — DB writes may fail due to RLS. Falling back to anon key.');
+        return this.supabase;
+      }
+      this.adminClient = createClient(url, serviceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+    }
+    return this.adminClient;
+  }
+
+  // ─── Auth: Sign up new user with password (creates account + sends confirmation OTP) ──────
+  async signUpWithPassword(email: string, password: string): Promise<{ success: boolean; message: string }> {
+    try {
+      this.logger.log(`[Supabase Auth] Signing up new user: ${email}`);
+      const { error } = await this.supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: undefined },
+      });
+      if (error) throw error;
+      return { success: true, message: 'Verification OTP sent to your email' };
+    } catch (err: any) {
+      this.logger.error(`[Supabase Auth] signUp failed: ${err.message}`);
+      // If user already exists, send a login OTP instead
+      if (err.message?.toLowerCase().includes('already registered') ||
+          err.message?.toLowerCase().includes('user already exists')) {
+        return this.sendOtp(email);
+      }
+      return { success: false, message: err.message };
+    }
+  }
+
+  // ─── Auth: Send OTP (for login flow) ──────────────────────────────────────
   async sendOtp(email: string): Promise<{ success: boolean; message: string }> {
     try {
-      this.logger.log(`[Supabase Auth] Requesting OTP send via Supabase client for ${email}`);
+      this.logger.log(`[Supabase Auth] Sending login OTP to ${email}`);
       const { error } = await this.supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: true },
+        options: { shouldCreateUser: false }, // login only — user must sign up first
       });
       if (error) throw error;
       return { success: true, message: 'OTP sent to your email' };
@@ -37,7 +77,7 @@ export class SupabaseService {
   }
 
   // ─── Auth: Verify OTP token via Supabase Auth ──────────────────────────────
-  async verifyOtp(email: string, token: string): Promise<{ success: boolean; message: string; userId?: string }> {
+  async verifyOtp(email: string, token: string): Promise<{ success: boolean; message: string; userId?: string; name?: string }> {
     try {
       this.logger.log(`[Supabase Auth] Verifying token for ${email}`);
       const { data, error } = await this.supabase.auth.verifyOtp({
@@ -46,20 +86,22 @@ export class SupabaseService {
         type: 'email',
       });
       if (error) throw error;
-      
-      const userId = data.user?.id || `usr_${Date.now()}`;
-      await this.upsertUser(userId, email, email.split('@')[0]);
-      return { success: true, message: 'Email verified', userId };
+
+      const userId = data.user?.id;
+      if (!userId) throw new Error('Verification failed — no user returned from Supabase');
+      const name = data.user?.user_metadata?.name || email.split('@')[0];
+      await this.upsertUser(userId, email, name);
+      return { success: true, message: 'Email verified', userId, name };
     } catch (err: any) {
       this.logger.error(`[Supabase Auth] verifyOtp failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
 
-  // ─── DB: Upsert user profile ──────────────────────────────────────────────
+  // ─── DB: Upsert user profile (uses service-role key to bypass RLS) ───────
   async upsertUser(userId: string, email: string, name: string, plan: string = 'none') {
     try {
-      const { error } = await this.supabase
+      const { error } = await this.adminSupabase
         .from('users')
         .upsert({ id: userId, email, name, plan, updated_at: new Date().toISOString() });
       if (error) throw error;
@@ -73,7 +115,7 @@ export class SupabaseService {
   // ─── DB: Get user plan ────────────────────────────────────────────────────
   async getUserPlan(userId: string): Promise<string> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await this.adminSupabase
         .from('users')
         .select('plan')
         .eq('id', userId)
@@ -85,10 +127,47 @@ export class SupabaseService {
     }
   }
 
-  // ─── DB: Activate Pro plan (called from Stripe webhook) ──────────────────
+  // ─── DB: Record pending payment (requires admin verification) ────────────
+  async recordPendingPayment(email: string, method: string, reference: string): Promise<void> {
+    try {
+      const { error } = await this.adminSupabase
+        .from('payments')
+        .insert({
+          email,
+          method,
+          reference,
+          status: 'pending',
+          amount: 1299,
+          currency: 'INR',
+          created_at: new Date().toISOString(),
+        });
+      if (error) {
+        // Table may not exist yet — log and continue (non-blocking)
+        this.logger.warn(`[Supabase] payments table may not exist: ${error.message}`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`[Supabase] recordPendingPayment failed (non-blocking): ${err.message}`);
+    }
+  }
+
+  // ─── DB: Check if UTR/reference already used ─────────────────────────────
+  async isPaymentReferenceUsed(reference: string): Promise<boolean> {
+    try {
+      const { data } = await this.adminSupabase
+        .from('payments')
+        .select('id')
+        .eq('reference', reference)
+        .maybeSingle();
+      return !!data;
+    } catch {
+      return false; // If table doesn't exist, allow (non-blocking)
+    }
+  }
+
+  // ─── DB: Activate Pro plan (admin-verified payments only) ────────────────
   async activateProPlan(email: string): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const { error } = await this.adminSupabase
         .from('users')
         .update({ plan: 'pro', updated_at: new Date().toISOString() })
         .eq('email', email);
@@ -102,7 +181,7 @@ export class SupabaseService {
   // ─── DB: Save workspace + leads ──────────────────────────────────────────
   async saveWorkspace(userId: string, workspace: any): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const { error } = await this.adminSupabase
         .from('workspaces')
         .upsert({ id: workspace.id, user_id: userId, data: workspace, updated_at: new Date().toISOString() });
       if (error) throw error;
@@ -114,7 +193,7 @@ export class SupabaseService {
   // ─── DB: Load workspaces for user ────────────────────────────────────────
   async getWorkspaces(userId: string): Promise<any[]> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await this.adminSupabase
         .from('workspaces')
         .select('data')
         .eq('user_id', userId)
