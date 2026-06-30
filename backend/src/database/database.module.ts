@@ -3,29 +3,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting, Agent, LeadList } from '../entities';
 
 function getDatabaseConfig() {
-  const url = process.env.DATABASE_URL || process.env.SUPABASE_URL;
+  const url = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
 
-  if (!url) {
-    Logger.warn('[Database] No DATABASE_URL or SUPABASE_URL found. Running without real database.');
-    return null;
-  }
-
-  const isSupabase = url.includes('supabase.co') || url.includes('supabase.com');
-
-  if (isSupabase) {
-    const anonKey = process.env.SUPABASE_ANON_KEY || '';
-    const dbUrl = process.env.SUPABASE_DB_URL || url;
+  if (!url || url.includes('supabase.co')) {
+    Logger.warn('[Database] No correct PostgreSQL Database URL found. Running in sqlite sandbox mode.');
     return {
-      type: 'postgres' as const,
-      url: dbUrl,
-      ssl: { rejectUnauthorized: false },
+      type: 'sqlite' as const,
+      database: ':memory:',
       entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting, Agent, LeadList],
       synchronize: true,
       logging: false,
-      extra: {
-        max: 10,
-        connectionTimeoutMillis: 10000,
-      },
     };
   }
 
@@ -36,6 +23,10 @@ function getDatabaseConfig() {
     entities: [User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting, Agent, LeadList],
     synchronize: true,
     logging: false,
+    extra: {
+      max: 10,
+      connectionTimeoutMillis: 10000,
+    },
   };
 }
 
