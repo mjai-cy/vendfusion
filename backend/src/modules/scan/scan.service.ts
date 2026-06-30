@@ -129,10 +129,8 @@ Return this exact JSON structure:
       report = { domain, ...parsed };
       this.logger.log(`[Scan] Gemini analysis complete for ${domain}: ${report.companyName}`);
     } catch (err: any) {
-      this.logger.error(`[Scan] Gemini failed, using fallback: ${err.message}`);
-      const namePart = domain.split('.')[0];
-      const companyName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-      report = this.fallbackReport(domain, companyName);
+      this.logger.error(`[Scan] Gemini analysis failed: ${err.message}`);
+      throw new Error(`AI analysis failed for ${domain}: ${err.message}. Please check the URL and try again.`);
     }
 
     // 3. Get real leads from Apollo
@@ -210,36 +208,7 @@ Return ONLY raw JSON array (no markdown):
     return [];
   }
 
-  // ─── Fallbacks ────────────────────────────────────────────────────────────
-  private fallbackReport(domain: string, companyName: string): ScanReport {
-    return {
-      domain,
-      companyName: `${companyName} Technologies`,
-      businessSummary: `${companyName} Technologies provides modern SaaS solutions for B2B teams looking to automate workflows and improve operational efficiency.`,
-      industry: 'Technology / Software as a Service',
-      products: [`${companyName} Platform`, `${companyName} Analytics`, `${companyName} API`],
-      services: ['Enterprise Integration', 'Custom Workflow Consulting', 'Managed Operations'],
-      estimatedICP: {
-        industries: ['SaaS', 'FinTech', 'Enterprise Software', 'Logistics'],
-        companySizes: ['11-50 employees', '51-200 employees', '201-500 employees'],
-        targetRoles: ['CTO', 'VP Engineering', 'Director of Operations', 'Product Manager'],
-        painPoints: ['Manual process bottlenecks', 'Poor CRM integration', 'Lack of real-time visibility'],
-      },
-      websiteQualityScore: 78,
-      aiSummary: `The site at ${domain} shows solid product positioning but lacks structured data markup that would improve AI agent personalization accuracy.`,
-      topCompetitors: [
-        { name: 'Competitor Alpha', website: `alpha-${domain}`, marketShare: '35%' },
-        { name: 'Competitor Beta', website: `beta-${domain.split('.')[0]}.io`, marketShare: '22%' },
-      ],
-      basicRecommendations: [
-        'Add schema.org structured data to product and pricing pages.',
-        'Optimize sitemap for deeper agent crawling.',
-        'Improve page load speed for better first-impression scores.',
-      ],
-      aiReadinessScore: 74,
-    };
-  }
-
+  // ─── Fallback personas (only used when Gemini is unavailable) ──────────
   private fallbackPersonas(): PersonaResult[] {
     return [
       { name: 'The Scaling CTO', role: 'CTO', company: 'Series A/B SaaS startup (50-200 employees)', pain: 'Outbound sales pipeline is entirely manual — no time to build it while shipping product', hook: 'Hey {name}, I saw {company} just expanded their engineering team — curious how you\'re thinking about outbound pipeline right now?', signals: ['Recent engineering hiring spike', 'Product launch on LinkedIn', 'Competitor mentions in posts'] },

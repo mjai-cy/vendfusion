@@ -6,9 +6,8 @@ import Link from "next/link";
 import { useAppState } from "@/context/AppStateContext";
 import { 
   Sparkles, Check, ArrowRight, Loader2, Globe, 
-  RefreshCw, Cpu
+  RefreshCw, Cpu, AlertCircle
 } from "lucide-react";
-import confetti from "canvas-confetti";
 
 function OnboardingContent() {
   const router = useRouter();
@@ -19,9 +18,8 @@ function OnboardingContent() {
   } = useAppState();
 
   const [websiteUrl, setWebsiteUrl] = useState("");
-  const [scanPercentage, setScanPercentage] = useState(0);
-  const [scanMessage, setScanMessage] = useState("");
   const [completed, setCompleted] = useState(false);
+  const [scanError, setScanError] = useState("");
 
   useEffect(() => {
     const urlParam = searchParams.get("url");
@@ -39,57 +37,16 @@ function OnboardingContent() {
   }, [isLoggedIn, plan, router]);
 
   const runScan = async (cleanUrl: string) => {
-    setScanPercentage(5);
-    setScanMessage("Analyzing your website...");
-    const progressInterval = setInterval(() => {
-      setScanPercentage((prev) => {
-        if (prev >= 95) {
-          clearInterval(progressInterval);
-          return 95;
-        }
-        return prev + Math.floor(Math.random() * 10) + 3;
-      });
-    }, 300);
-
-    const messages = [
-      "Reading your business model and ICP...",
-      "Identifying products and services...",
-      "Analyzing competitive positioning...",
-      "Generating buyer profiles...",
-      "Initializing your AI agent..."
-    ];
-    let msgIdx = 0;
-    const msgInterval = setInterval(() => {
-      msgIdx++;
-      if (msgIdx < messages.length) {
-        setScanMessage(messages[msgIdx]);
-      } else {
-        clearInterval(msgInterval);
-      }
-    }, 800);
-
+    setScanError("");
     try {
       await runWebsiteScan(cleanUrl);
-      clearInterval(progressInterval);
-      clearInterval(msgInterval);
-      setScanPercentage(100);
-      setScanMessage("Your AI agent is ready!");
       
       const domainName = cleanUrl.replace(/https?:\/\/(www\.)?/, "").split(".")[0];
       updateWorkspaceName(domainName.toUpperCase());
       
-      setTimeout(() => {
-        setCompleted(true);
-        confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.6 }
-        });
-      }, 500);
-    } catch (err) {
-      clearInterval(progressInterval);
-      clearInterval(msgInterval);
-      setScanMessage("Scan failed. Please try again.");
+      setCompleted(true);
+    } catch (err: any) {
+      setScanError(err.message || "Scan failed. Please check the URL and try again.");
     }
   };
 
@@ -152,24 +109,20 @@ function OnboardingContent() {
                     Launch my agent
                     <ArrowRight className="h-4 w-4" />
                   </button>
+                  {scanError && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+                      <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-300">{scanError}</p>
+                    </div>
+                  )}
                 </form>
               ) : (
                 <div className="space-y-4 py-4 text-center">
                   <div className="flex items-center justify-center gap-3">
-                    <Cpu className="h-5 w-5 text-primary animate-pulse" />
-                    <span className="text-xs text-gray-400 font-medium">Setting up your agent...</span>
+                    <RefreshCw className="h-5 w-5 text-primary animate-spin" />
+                    <span className="text-xs text-gray-400 font-medium">Analyzing your website...</span>
                   </div>
-                  <div className="flex justify-between text-xs text-gray-400 font-mono">
-                    <span>Progress</span>
-                    <span>{scanPercentage}%</span>
-                  </div>
-                  <div className="w-full bg-white/5 rounded-full h-1.5">
-                    <div 
-                      className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${scanPercentage}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-300 font-mono animate-pulse">{scanMessage}</p>
+                  <p className="text-xs text-gray-400 font-mono">Scanning your business, finding leads, and configuring your AI agent</p>
                 </div>
               )}
             </div>

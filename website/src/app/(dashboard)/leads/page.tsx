@@ -385,26 +385,32 @@ export default function LeadsPage() {
 
               {/* Coordinates: Mail and Phone */}
               <div className="flex flex-wrap gap-2 text-[10px]">
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(contactLead.email || "support@xyz.ai");
-                    alert("Email copied!");
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary font-bold hover:bg-primary/10 transition-colors"
-                >
-                  <Mail className="h-3 w-3" />
-                  {contactLead.email || "Click to Enrich"}
-                </button>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(contactLead.phone || "+1 555-019-2834");
-                    alert("Phone copied!");
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 transition-colors"
-                >
-                  <Globe className="h-3 w-3" />
-                  {contactLead.phone || "Find Phone"}
-                </button>
+                {contactLead.email ? (
+                  <button 
+                    onClick={() => { navigator.clipboard.writeText(contactLead.email!); alert("Email copied!"); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary font-bold hover:bg-primary/10 transition-colors"
+                  >
+                    <Mail className="h-3 w-3" />
+                    {contactLead.email}
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-gray-500">
+                    <Mail className="h-3 w-3" /> No email
+                  </span>
+                )}
+                {contactLead.phone ? (
+                  <button 
+                    onClick={() => { navigator.clipboard.writeText(contactLead.phone!); alert("Phone copied!"); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 transition-colors"
+                  >
+                    <Globe className="h-3 w-3" />
+                    {contactLead.phone}
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-gray-500">
+                    <Globe className="h-3 w-3" /> No phone
+                  </span>
+                )}
               </div>
             </div>
 
@@ -528,10 +534,6 @@ export default function LeadsPage() {
                 </h4>
                 <div className="grid grid-cols-2 gap-4 text-xs rounded-xl border border-white/5 bg-black/20 p-4">
                   <div className="space-y-1">
-                    <span className="text-gray-500 text-[10px]">Industry</span>
-                    <p className="text-white font-medium">Computer Software</p>
-                  </div>
-                  <div className="space-y-1">
                     <span className="text-gray-500 text-[10px]">Company URL</span>
                     <a 
                       href={`https://${contactLead.domain}`} 
@@ -541,10 +543,6 @@ export default function LeadsPage() {
                     >
                       {contactLead.domain || "N/A"}
                     </a>
-                  </div>
-                  <div className="space-y-1 col-span-2">
-                    <span className="text-gray-500 text-[10px]">Created On</span>
-                    <p className="text-gray-300 font-medium">Sep 09, 2025 11:48 PM</p>
                   </div>
                 </div>
               </div>
@@ -556,45 +554,27 @@ export default function LeadsPage() {
               {/* Fit options */}
               <div className="flex items-center gap-1.5">
                 <button 
-                  onClick={() => {
-                    updateLeadStatus(contactLead.id, "replied");
-                    alert("Fit: Approved");
-                  }}
+                  onClick={() => updateLeadStatus(contactLead.id, "contacted")}
                   className="h-8 w-8 rounded-lg bg-green-500/10 border border-green-500/25 text-green-400 flex items-center justify-center font-bold hover:bg-green-500/20 transition-colors"
-                  title="Fit"
+                  title="Fit — contact"
                 >
                   ✓
                 </button>
                 <button 
-                  onClick={() => {
-                    alert("Fit: Maybe");
-                  }}
+                  onClick={() => {}}
                   className="h-8 w-8 rounded-lg bg-yellow-500/10 border border-yellow-500/25 text-yellow-400 flex items-center justify-center font-bold hover:bg-yellow-500/20 transition-colors"
-                  title="Maybe"
+                  title="Maybe — needs review"
                 >
                   ?
                 </button>
                 <button 
-                  onClick={() => {
-                    updateLeadStatus(contactLead.id, "ignored");
-                    alert("Fit: Out of scope");
-                  }}
+                  onClick={() => updateLeadStatus(contactLead.id, "ignored")}
                   className="h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400 flex items-center justify-center font-bold hover:bg-red-500/20 transition-colors"
                   title="Out of scope"
                 >
                   ✕
                 </button>
               </div>
-
-              {/* Action Dropdown / Button */}
-              <button 
-                onClick={() => {
-                  alert("Export completed!");
-                }}
-                className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 text-gray-300 text-xs font-bold transition-all flex items-center gap-1.5"
-              >
-                Export
-              </button>
             </div>
 
           </div>

@@ -1,102 +1,35 @@
 "use client";
 
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppState } from "@/context/AppStateContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import {
-  Check, Sparkles, CreditCard, X, ChevronRight,
-  Smartphone, Shield, Clock, Copy
+  Check, Sparkles, X, ChevronRight,
+  Shield, Clock
 } from "lucide-react";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
-const AMOUNT = 1299;
-
-/* ─── Payment processing overlay ────────────────────────────────────────── */
-function ProcessingOverlay({ onSuccess }: { onSuccess: () => void }) {
-  const [step, setStep] = useState(0);
-  const steps = [
-    "Connecting to payment network...",
-    "Verifying transaction...",
-    "Confirming payment...",
-    "Activating your Pro plan...",
-  ];
-
-  useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    steps.forEach((_, i) => {
-      timers.push(setTimeout(() => setStep(i), i * 900));
-    });
-    // Auto-succeed after all steps
-    timers.push(setTimeout(() => onSuccess(), steps.length * 900 + 400));
-    return () => timers.forEach(clearTimeout);
-  }, []); // eslint-disable-line
-
+/* ─── Coming Soon overlay for payment ──────────────────────────────────── */
+function PaymentComingSoon({ onClose }: { onClose: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-8 space-y-6">
-      {/* Spinner ring */}
-      <div className="relative h-20 w-20">
-        <svg className="absolute inset-0 animate-spin" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(99,102,241,0.15)" strokeWidth="6" />
-          <circle
-            cx="40" cy="40" r="34" fill="none"
-            stroke="url(#grad)" strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray="60 154"
-          />
-          <defs>
-            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#6366f1" />
-              <stop offset="100%" stopColor="#8b5cf6" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Shield className="h-7 w-7 text-primary" />
-        </div>
+    <div className="flex flex-col items-center justify-center py-10 px-6 space-y-6">
+      <div className="h-16 w-16 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+        <Clock className="h-8 w-8 text-yellow-400" />
       </div>
-
-      <div className="text-center space-y-1">
-        <p className="text-sm font-bold text-white">Processing Payment</p>
-        <p className="text-xs text-primary animate-pulse">{steps[step]}</p>
+      <div className="text-center space-y-2">
+        <p className="text-lg font-bold text-white">Payment Not Yet Available</p>
+        <p className="text-xs text-gray-400 leading-relaxed max-w-xs">
+          We're working on integrating a real payment gateway. Your Pro plan is currently active for testing.
+        </p>
       </div>
-
-      <div className="w-full space-y-2 px-4">
-        {steps.map((s, i) => (
-          <div key={i} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${i <= step ? "text-secondary" : "text-gray-600"}`}>
-            {i < step ? (
-              <Check className="h-3 w-3 shrink-0" />
-            ) : i === step ? (
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
-            ) : (
-              <div className="h-2 w-2 rounded-full bg-white/10 shrink-0" />
-            )}
-            {s}
-          </div>
-        ))}
-      </div>
+      <button
+        onClick={onClose}
+        className="h-10 px-6 rounded-xl bg-primary hover:bg-primary-hover text-xs font-bold text-white transition-colors"
+      >
+        Continue with Free Access
+      </button>
     </div>
-  );
-}
-
-/* ─── UPI App Button ─────────────────────────────────────────────────────── */
-function UpiAppButton({
-  name, color, logo, onClick
-}: {
-  name: string; color: string; logo: React.ReactNode; onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border border-white/10 hover:border-white/20 bg-white/3 hover:bg-white/8 transition-all active:scale-95`}
-    >
-      <div className={`h-10 w-10 rounded-full ${color} flex items-center justify-center text-white font-black text-sm`}>
-        {logo}
-      </div>
-      <span className="text-[9px] font-bold text-gray-400">{name}</span>
-    </button>
   );
 }
 
@@ -107,70 +40,10 @@ function PricingContent() {
   const { isLoggedIn, selectPlan } = useAppState();
 
   const [checkoutActive, setCheckoutActive] = useState(false);
-  const [activeMethod, setActiveMethod] = useState<"upi" | "card">("upi");
-  const [processing, setProcessing] = useState(false);
-  const [copiedUpi, setCopiedUpi] = useState(false);
-  const [upiLaunched, setUpiLaunched] = useState(false);
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
-  const [cardName, setCardName] = useState("");
-  const [upiId, setUpiId] = useState("pay.xyzai@upi");
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    fetch(`${BACKEND_URL}/billing/config`)
-      .then(r => r.json())
-      .then(d => { if (d?.upiId) setUpiId(d.upiId); })
-      .catch(() => {});
-  }, []);
-
-  // Clean up timer on unmount
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const getRedirectUrl = () => {
     const urlParam = searchParams.get("url") || searchParams.get("domain");
     return urlParam ? `/onboarding?url=${encodeURIComponent(urlParam)}` : "/onboarding";
-  };
-
-  const activateAndRedirect = () => {
-    selectPlan("pro");
-    router.push(getRedirectUrl());
-    setCheckoutActive(false);
-  };
-
-  // Build UPI deep link
-  const buildUpiLink = (app: string) => {
-    const base = `pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("xyz.ai")}&am=${AMOUNT}&cu=INR&tn=${encodeURIComponent("xyz.ai Pro Plan")}`;
-    switch (app) {
-      case "gpay":   return `tez://upi/pay?${base}`;
-      case "phonepe": return `phonepe://pay?${base}`;
-      case "paytm":  return `paytmmp://upi/pay?${base}`;
-      default:       return `upi://pay?${base}`;
-    }
-  };
-
-  const handleUpiAppClick = (app: string) => {
-    const link = buildUpiLink(app);
-    // Open deep link
-    window.location.href = link;
-    // After 1.5s (user is back), show processing + auto-complete
-    setUpiLaunched(true);
-    timerRef.current = setTimeout(() => {
-      setProcessing(true);
-    }, 1500);
-  };
-
-  const handleUpiQrPaid = () => {
-    setProcessing(true);
-  };
-
-  const handleCardSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const digits = cardNumber.replace(/\s/g, "");
-    if (digits.length < 15) return;
-    if (!cardExpiry || !cardCvv || !cardName) return;
-    setProcessing(true);
   };
 
   const features = [
@@ -225,12 +98,13 @@ function PricingContent() {
                   const urlParam = searchParams.get("url") || searchParams.get("domain");
                   router.push(urlParam ? `/signup?url=${encodeURIComponent(urlParam)}` : "/signup");
                 } else {
-                  setCheckoutActive(true);
+                  selectPlan("pro");
+                  router.push(getRedirectUrl());
                 }
               }}
               className="w-full inline-flex h-11 items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all"
             >
-              {isLoggedIn ? "Subscribe to Pro Plan" : "Try xyz for free →"}
+              {isLoggedIn ? "Continue to Setup →" : "Try xyz for free →"}
             </button>
 
             <div className="border-t border-primary/10 pt-6 space-y-3">
@@ -262,7 +136,7 @@ function PricingContent() {
       {/* ─── Checkout Modal ────────────────────────────────────────────── */}
       {checkoutActive && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" onClick={() => { if (!processing) setCheckoutActive(false); }} />
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setCheckoutActive(false)} />
           <div className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#0a0a12] shadow-2xl overflow-hidden animate-fade-in">
 
             {/* Header */}
@@ -278,190 +152,13 @@ function PricingContent() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-lg font-extrabold text-white">₹1,299</span>
-                {!processing && (
-                  <button onClick={() => setCheckoutActive(false)} className="p-1 text-gray-600 hover:text-white">
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+                <button onClick={() => setCheckoutActive(false)} className="p-1 text-gray-600 hover:text-white">
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
-            {/* Processing state */}
-            {processing ? (
-              <ProcessingOverlay onSuccess={activateAndRedirect} />
-            ) : (
-              <div className="p-5 space-y-4">
-                {/* Method tabs */}
-                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-black/40 border border-white/5">
-                  {(["upi", "card"] as const).map(m => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => { setActiveMethod(m); setUpiLaunched(false); }}
-                      className={`h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                        activeMethod === m ? "bg-primary text-white shadow-md shadow-primary/20" : "text-gray-500 hover:text-white"
-                      }`}
-                    >
-                      {m === "upi" ? <Smartphone className="h-3.5 w-3.5" /> : <CreditCard className="h-3.5 w-3.5" />}
-                      {m === "upi" ? "UPI" : "Card"}
-                    </button>
-                  ))}
-                </div>
-
-                {/* ─── UPI Flow ─── */}
-                {activeMethod === "upi" && !upiLaunched && (
-                  <div className="space-y-4">
-                    <p className="text-[10px] text-gray-400 text-center">Open your payment app and pay ₹1,299</p>
-
-                    {/* App buttons */}
-                    <div className="grid grid-cols-3 gap-2">
-                      <UpiAppButton
-                        name="GPay"
-                        color="bg-white"
-                        logo={<span className="text-[#4285F4] font-black text-sm">G</span>}
-                        onClick={() => handleUpiAppClick("gpay")}
-                      />
-                      <UpiAppButton
-                        name="PhonePe"
-                        color="bg-[#5f259f]"
-                        logo={<span className="text-white font-black">P</span>}
-                        onClick={() => handleUpiAppClick("phonepe")}
-                      />
-                      <UpiAppButton
-                        name="Paytm"
-                        color="bg-[#002970]"
-                        logo={<span className="text-white font-black text-xs">Pt</span>}
-                        onClick={() => handleUpiAppClick("paytm")}
-                      />
-                    </div>
-
-                    {/* Divider */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-px bg-white/5" />
-                      <span className="text-[9px] text-gray-600 font-bold uppercase">or pay via UPI ID</span>
-                      <div className="flex-1 h-px bg-white/5" />
-                    </div>
-
-                    {/* UPI ID copy */}
-                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                      <span className="flex-1 font-mono text-xs text-gray-200">{upiId}</span>
-                      <button
-                        type="button"
-                        onClick={() => { navigator.clipboard.writeText(upiId); setCopiedUpi(true); setTimeout(() => setCopiedUpi(false), 2000); }}
-                        className="flex items-center gap-1 text-[10px] text-primary hover:text-primary font-bold transition-colors"
-                      >
-                        <Copy className="h-3 w-3" />
-                        {copiedUpi ? "Copied!" : "Copy"}
-                      </button>
-                    </div>
-
-                    {/* After paying via UPI ID */}
-                    <button
-                      type="button"
-                      onClick={handleUpiQrPaid}
-                      className="w-full h-10 rounded-xl bg-secondary/10 border border-secondary/20 text-xs font-bold text-secondary hover:bg-secondary/20 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      I&apos;ve completed the payment
-                    </button>
-                  </div>
-                )}
-
-                {/* ─── After UPI app launched ─── */}
-                {activeMethod === "upi" && upiLaunched && (
-                  <div className="space-y-4 text-center">
-                    <div className="flex flex-col items-center gap-3 py-4">
-                      <div className="h-14 w-14 rounded-full bg-secondary/10 border border-secondary/20 flex items-center justify-center">
-                        <Clock className="h-7 w-7 text-secondary" />
-                      </div>
-                      <p className="text-sm font-bold text-white">Waiting for payment...</p>
-                      <p className="text-[10px] text-gray-400">Complete the payment in your UPI app<br />and return here</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setProcessing(true)}
-                      className="w-full h-10 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary-hover transition-all flex items-center justify-center gap-2"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Payment done — Continue
-                    </button>
-                    <button type="button" onClick={() => setUpiLaunched(false)} className="text-[10px] text-gray-600 hover:text-gray-400">
-                      ← Back
-                    </button>
-                  </div>
-                )}
-
-                {/* ─── Card Flow ─── */}
-                {activeMethod === "card" && (
-                  <form onSubmit={handleCardSubmit} className="space-y-3">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Card Number</label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="1234 5678 9012 3456"
-                        required
-                        value={cardNumber}
-                        onChange={e => setCardNumber(e.target.value.replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim().slice(0, 19))}
-                        className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white font-mono focus:outline-none focus:border-primary transition-colors"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Name on Card</label>
-                      <input
-                        type="text"
-                        placeholder="Your Full Name"
-                        required
-                        value={cardName}
-                        onChange={e => setCardName(e.target.value)}
-                        className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white focus:outline-none focus:border-primary transition-colors"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Expiry</label>
-                        <input
-                          type="text"
-                          placeholder="MM / YY"
-                          required
-                          maxLength={5}
-                          value={cardExpiry}
-                          onChange={e => {
-                            const v = e.target.value.replace(/\D/g, "");
-                            setCardExpiry(v.length >= 3 ? `${v.slice(0,2)} / ${v.slice(2)}` : v);
-                          }}
-                          className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white text-center font-mono focus:outline-none focus:border-primary transition-colors"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">CVV</label>
-                        <input
-                          type="password"
-                          placeholder="•••"
-                          maxLength={4}
-                          required
-                          value={cardCvv}
-                          onChange={e => setCardCvv(e.target.value.replace(/\D/g, ""))}
-                          className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white text-center font-mono focus:outline-none focus:border-primary transition-colors"
-                        />
-                      </div>
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full h-11 rounded-xl bg-primary hover:bg-primary-hover text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
-                    >
-                      Pay ₹1,299 <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </form>
-                )}
-
-                {/* Security note */}
-                <div className="flex items-center justify-center gap-1.5 text-[9px] text-gray-600">
-                  <Shield className="h-3 w-3" />
-                  Secured payment · ₹1,299/month · Cancel anytime
-                </div>
-              </div>
-            )}
+            <PaymentComingSoon onClose={() => { setCheckoutActive(false); selectPlan("pro"); }} />
           </div>
         </div>
       )}

@@ -138,7 +138,7 @@ interface AppStateContextProps {
   aiMessagesThisMonth: number;
   login: (email: string, name: string) => void;
   logout: () => void;
-  verifyOtp: (otp: string) => boolean;
+  verifyOtp: (otp: string) => Promise<boolean>;
   selectPlan: (selectedPlan: "pro") => void;
   runWebsiteScan: (url: string) => Promise<ScanReport>;
   updateWorkspaceName: (name: string) => void;
@@ -257,9 +257,6 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const cachedMode = localStorage.getItem("gj_mode");
     const cachedWorkspaces = localStorage.getItem("gj_workspaces");
     const cachedActiveWsId = localStorage.getItem("gj_activeWorkspaceId");
-    const cachedHubspot = localStorage.getItem("gj_hubspotConnected");
-    const cachedPipedrive = localStorage.getItem("gj_pipedriveConnected");
-
     if (cachedUser) setUser(JSON.parse(cachedUser));
     if (cachedLoggedIn) setIsLoggedIn(cachedLoggedIn === "true");
     if (cachedVerified) setIsEmailVerified(cachedVerified === "true");
@@ -267,8 +264,6 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (cachedMode) setMode(cachedMode as "manual" | "auto");
     if (cachedWorkspaces) setWorkspaces(JSON.parse(cachedWorkspaces));
     if (cachedActiveWsId) setActiveWorkspaceId(cachedActiveWsId);
-    if (cachedHubspot) setHubspotConnected(cachedHubspot === "true");
-    if (cachedPipedrive) setPipedriveConnected(cachedPipedrive === "true");
   }, []);
 
   const login = (email: string, name: string) => {
@@ -358,16 +353,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const data = await res.json();
       const report: ScanReport = data.report || data;
 
-      const baseNow = Date.now();
-      const sampleLeads: Lead[] = (data.leads && data.leads.length > 0) ? data.leads : [
-        { id: `lead-${baseNow}-1`, name: "Rajesh Mehta", role: "CTO", companyName: "TechVista Solutions", domain: "techvista.in", intentScore: 92, intentSignals: ["Competitor post interaction", "Active in target hashtags", "Company hiring spike"], email: "rajesh.m@techvista.in", phone: "+91 98251 02847", linkedinUrl: "https://linkedin.com/in/rajesh-mehta", outreachStatus: "new", enrichmentStatus: "enriched" },
-        { id: `lead-${baseNow}-2`, name: "Priya Sharma", role: "VP of Engineering", companyName: "DataCraft Labs", domain: "datacraft.io", intentScore: 88, intentSignals: ["Recent funding round", "Similar tech stack", "Shared your blog post"], email: "priya@datacraft.io", phone: "+91 91726 48392", linkedinUrl: "https://linkedin.com/in/priya-sharma", outreachStatus: "new", enrichmentStatus: "enriched" },
-        { id: `lead-${baseNow}-3`, name: "Arun Patel", role: "Director of Operations", companyName: "LogiNext Systems", domain: "loginext.com", intentScore: 85, intentSignals: ["Profile visit (3x in 7 days)", "Job change (new role)", "Attended competitor webinar"], email: "arun.p@loginext.com", phone: "+91 99182 37461", linkedinUrl: "https://linkedin.com/in/arun-patel", outreachStatus: "new", enrichmentStatus: "enriched" },
-        { id: `lead-${baseNow}-4`, name: "Ananya Gupta", role: "Product Owner", companyName: "FinFlow Technologies", domain: "finflow.tech", intentScore: 79, intentSignals: ["Following your company", "Downloaded competitor whitepaper", "Connects with team members"], email: "ananya@finflow.tech", phone: "+91 88273 64510", linkedinUrl: "https://linkedin.com/in/ananya-gupta", outreachStatus: "new", enrichmentStatus: "enriched" },
-        { id: `lead-${baseNow}-5`, name: "Vikram Joshi", role: "CEO", companyName: "GreenPixel Media", domain: "greenpixel.com", intentScore: 76, intentSignals: ["Shared your blog post", "Active in target hashtags"], email: "vikram@greenpixel.com", phone: "+91 97261 54839", linkedinUrl: "https://linkedin.com/in/vikram-joshi", outreachStatus: "new", enrichmentStatus: "enriched" },
-        { id: `lead-${baseNow}-6`, name: "Sneha Kapoor", role: "Head of Marketing", companyName: "BrandElevate", domain: "brandelevate.co", intentScore: 82, intentSignals: ["Competitor post interaction", "Recent funding round", "Company hiring spike", "Profile visit (3x in 7 days)"], email: "sneha@brandelevate.co", phone: "+91 90283 74615", linkedinUrl: "https://linkedin.com/in/sneha-kapoor", outreachStatus: "new", enrichmentStatus: "enriched" },
-        { id: `lead-${baseNow}-7`, name: "Amit Verma", role: "Product Manager", companyName: "CloudSync Inc", domain: "cloudsync.io", intentScore: 71, intentSignals: ["Following your company", "Similar tech stack"], email: "amit@cloudsync.io", phone: "+91 98172 63540", linkedinUrl: "https://linkedin.com/in/amit-verma", outreachStatus: "new", enrichmentStatus: "enriched" },
-      ];
+      const leadsFromApi: Lead[] = (data.leads && data.leads.length > 0) ? data.leads : [];
 
       const autoAgent: AIAgent = {
         id: `agent-${Date.now()}`,
@@ -399,12 +385,12 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           { message: `Website analyzed — found ${report.products.length} products, ${report.services.length} services`, time: "Just now" },
           { message: `ICP configured for ${report.estimatedICP.targetRoles.slice(0, 3).join(", ")} roles`, time: "Just now" },
           { message: `Detected ${report.topCompetitors.length} competitors in your space`, time: "Just now" },
-          { message: `Found ${sampleLeads.length} high-intent leads matching your ICP`, time: "Just now" },
+          { message: `Found ${leadsFromApi.length} high-intent leads matching your ICP`, time: "Just now" },
           { message: `Agent is actively monitoring signals — ${report.estimatedICP.industries.length} industries tracked`, time: "Just now" },
         ],
-        leadsAnalyzed: Math.floor(150 + Math.random() * 200),
-        icpMatchCount: Math.floor(40 + Math.random() * 60),
-        leadsSavedCount: sampleLeads.length,
+        leadsAnalyzed: leadsFromApi.length,
+        icpMatchCount: Math.round(leadsFromApi.length * 0.6),
+        leadsSavedCount: leadsFromApi.length,
       };
 
       const newWorkspace: Workspace = {
@@ -413,9 +399,9 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         domain,
         createdAt: new Date().toISOString(),
         scanReport: report,
-        leads: sampleLeads,
-        leadSearchesThisMonth: Math.floor(10 + Math.random() * 30),
-        aiMessagesThisMonth: Math.floor(5 + Math.random() * 15),
+        leads: leadsFromApi,
+        leadSearchesThisMonth: 0,
+        aiMessagesThisMonth: 0,
         agents: [autoAgent],
         campaigns: [],
         leadLists: [],
@@ -467,14 +453,12 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     else localStorage.removeItem("gj_activeWorkspaceId");
   };
 
-  const connectHubspot = (apiKey: string) => {
-    setHubspotConnected(true);
-    localStorage.setItem("gj_hubspotConnected", "true");
+  const connectHubspot = (_apiKey: string) => {
+    console.warn("[HubSpot] Integration not yet implemented — requires backend API validation");
   };
 
-  const connectPipedrive = (token: string) => {
-    setPipedriveConnected(true);
-    localStorage.setItem("gj_pipedriveConnected", "true");
+  const connectPipedrive = (_token: string) => {
+    console.warn("[Pipedrive] Integration not yet implemented — requires backend API validation");
   };
 
   const toggleSellingMode = (newMode: "manual" | "auto") => {
@@ -502,26 +486,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...ws,
       leads: ws.leads.map(l =>
         l.id === leadId
-          ? {
-              ...l,
-              enrichmentStatus: "enriched" as const,
-              email: `${l.name.toLowerCase().replace(/\s+/g, ".")}@${l.domain}`,
-              phone: "+1-555-" + Math.floor(1000 + Math.random() * 9000),
-              intentSignals: [
-                "Competitor post interaction",
-                "Profile visit (3x in 7 days)",
-                "Job change (new role)",
-                "Following your company",
-                "Active in target hashtags",
-                "Company hiring spike",
-                "Recent funding round",
-                "Attended competitor webinar",
-                "Downloaded competitor whitepaper",
-                "Similar tech stack",
-                "Shared your blog post",
-                "Connects with team members",
-              ],
-            }
+          ? { ...l, enrichmentStatus: "enriched" as const }
           : l
       ),
     }));
