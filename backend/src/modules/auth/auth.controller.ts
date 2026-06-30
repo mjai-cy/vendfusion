@@ -26,16 +26,7 @@ export class AuthController {
     return this.authService.signInWithPassword(email, password);
   }
 
-  // ─── Login: OTP-based (for existing users) ───────────────────────────────
-  @Post('send-otp')
-  async sendOtp(@Body('email') email: string) {
-    if (!email) {
-      return { success: false, message: 'Email address is required' };
-    }
-    return this.authService.sendOtp(email);
-  }
-
-  // ─── Verify OTP (both signup and login) ──────────────────────────────────
+  // ─── Verify OTP (for signup verification) ────────────────────────────────
   @Post('verify-otp')
   async verifyOtp(@Body('email') email: string, @Body('otp') otp: string) {
     if (!email || !otp) {

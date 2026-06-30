@@ -67,22 +67,6 @@ export class SupabaseService {
     }
   }
 
-  // ─── Auth: Send OTP for login (via Supabase Auth) ─────────────────────────
-  async sendOtp(email: string): Promise<{ success: boolean; message: string }> {
-    try {
-      this.logger.log(`[Auth] Sending login OTP to ${email}`);
-      const { error } = await this.supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false },
-      });
-      if (error) throw error;
-      return { success: true, message: 'OTP sent to your email' };
-    } catch (err: any) {
-      this.logger.error(`[Auth] signInWithOtp failed: ${err.message}`);
-      return { success: false, message: err.message };
-    }
-  }
-
   // ─── Auth: Password-based login ───────────────────────────────────────────
   async signInWithPassword(email: string, password: string): Promise<{ success: boolean; message: string; userId?: string; name?: string }> {
     try {
