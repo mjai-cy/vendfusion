@@ -20,13 +20,21 @@ export default function AuthCallbackPage() {
 
     const params = new URLSearchParams(hash.replace("#", ""));
     const accessToken = params.get("access_token");
+    const type = params.get("type");
 
     if (!accessToken) {
       setStatus("Invalid link. Please try signing up again.");
       return;
     }
 
-    fetch(`${BACKEND_URL}/auth/verify-magic-link`, {
+    // Recovery link → redirect to reset-password page with the token
+    if (type === "recovery") {
+      router.push(`/auth/reset-password?accessToken=${encodeURIComponent(accessToken)}`);
+      return;
+    }
+
+    // Signup confirmation → verify and log in
+    fetch(`${BACKEND_URL}/auth/verify-link`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken }),
