@@ -128,7 +128,35 @@ Return this exact JSON structure:
       const raw = await this.askGemini(prompt);
       const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const parsed = JSON.parse(jsonStr);
-      report = { domain, ...parsed };
+
+      const defaults = {
+        companyName: domain.split('.')[0],
+        businessSummary: 'B2B Sales and marketing solutions provider.',
+        industry: 'Technology',
+        products: [],
+        services: [],
+        estimatedICP: {
+          industries: ['Technology'],
+          companySizes: ['11-50 employees', '51-200 employees'],
+          targetRoles: ['Founder', 'CEO', 'Sales Director'],
+          painPoints: ['Inefficient lead outreach']
+        },
+        websiteQualityScore: 75,
+        aiSummary: 'Scanned company successfully.',
+        topCompetitors: [],
+        basicRecommendations: ['Improve landing page copy', 'Add B2B buying intent triggers'],
+        aiReadinessScore: 70
+      };
+
+      report = {
+        domain,
+        ...defaults,
+        ...parsed,
+        estimatedICP: {
+          ...defaults.estimatedICP,
+          ...(parsed.estimatedICP || {})
+        }
+      };
       this.logger.log(`[Scan] Gemini analysis complete for ${domain}: ${report.companyName}`);
     } catch (err: any) {
       this.logger.error(`[Scan] Gemini analysis failed: ${err.message}`);

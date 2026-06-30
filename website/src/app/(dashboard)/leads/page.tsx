@@ -166,10 +166,10 @@ export default function LeadsPage() {
 
           {scanReport && (
             <div className="flex flex-wrap gap-1.5">
-              {scanReport.estimatedICP.targetRoles.slice(0, 5).map((role, i) => (
+              {(scanReport?.estimatedICP?.targetRoles || []).slice(0, 5).map((role, i) => (
                 <span key={i} className="text-[9px] bg-primary/5 border border-primary/15 px-2 py-0.5 rounded text-primary font-medium">ICP: {role}</span>
               ))}
-              {scanReport.estimatedICP.industries.slice(0, 3).map((ind, i) => (
+              {(scanReport?.estimatedICP?.industries || []).slice(0, 3).map((ind, i) => (
                 <span key={i} className="text-[9px] bg-secondary/5 border border-secondary/15 px-2 py-0.5 rounded text-secondary font-medium">{ind}</span>
               ))}
             </div>

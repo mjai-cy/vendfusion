@@ -111,7 +111,7 @@ export default function AgentDashboard() {
               <>
                 <p className="text-primary">[System] Agent initialized — workspace: {workspaceName}</p>
                 <p className="text-gray-500">[System] Website scan complete — {scanReport.companyName} analyzed</p>
-                <p className="text-primary">[Agent] ICP generated: targeting {scanReport.estimatedICP.targetRoles.slice(0, 3).join(", ")}</p>
+                <p className="text-primary">[Agent] ICP generated: targeting {(scanReport?.estimatedICP?.targetRoles || []).slice(0, 3).join(", ") || "Unknown"}</p>
                 {leads.length > 0 ? (
                   <>
                     <p className="text-secondary">[Agent] {leads.length} high-intent leads discovered</p>

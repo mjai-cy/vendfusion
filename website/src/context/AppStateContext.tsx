@@ -138,7 +138,6 @@ interface AppStateContextProps {
   aiMessagesThisMonth: number;
   login: (email: string, name: string) => void;
   logout: () => void;
-  verifyOtp: (otp: string) => Promise<boolean>;
   selectPlan: (selectedPlan: "pro") => void;
   runWebsiteScan: (url: string) => Promise<ScanReport>;
   updateWorkspaceName: (name: string) => void;
@@ -286,29 +285,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.clear();
   };
 
-  const verifyOtp = async (otp: string): Promise<boolean> => {
-    if (!user?.email) return false;
-    try {
-      const res = await fetch(`${BACKEND_URL}/auth/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, otp }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setIsEmailVerified(true);
-        if (data.userId) {
-          localStorage.setItem("gj_userId", data.userId);
-        }
-        localStorage.setItem("gj_isEmailVerified", "true");
-        return true;
-      }
-      return false;
-    } catch {
-      // Security: do NOT accept OTP if backend is unreachable — fail closed
-      return false;
-    }
-  };
+  const verifyOtp = async (_otp: string): Promise<boolean> => { return false; };
 
   const selectPlan = async (selectedPlan: "pro") => {
     // Activate plan locally immediately
@@ -352,36 +329,36 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       const autoAgent: AIAgent = {
         id: `agent-${Date.now()}`,
-        name: `${report.companyName || domain} Agent`,
+        name: `${report?.companyName || domain} Agent`,
         type: "autopilot",
         status: "active",
         createdAt: new Date().toISOString(),
         icp: {
-          jobTitles: report.estimatedICP.targetRoles,
-          industries: report.estimatedICP.industries,
-          companySizes: report.estimatedICP.companySizes,
-          locations: [report.industry || "Global"],
+          jobTitles: report?.estimatedICP?.targetRoles || [],
+          industries: report?.estimatedICP?.industries || [],
+          companySizes: report?.estimatedICP?.companySizes || [],
+          locations: [report?.industry || "Global"],
           companyTypes: ["Startup", "Private Company"],
-          additionalCriteria: report.businessSummary.slice(0, 300),
+          additionalCriteria: report?.businessSummary?.slice(0, 300) || "",
         },
         signals: {
           companyLinkedIn: `https://linkedin.com/company/${domain}`,
-          engagementKeywords: report.products.concat(report.services).slice(0, 8),
+          engagementKeywords: (report?.products || []).concat(report?.services || []).slice(0, 8),
           influencers: [],
           triggerTopIcp: true,
           triggerFunding: true,
           triggerJobChanges: true,
           linkedInGroups: [],
           linkedInEvents: [],
-          competitors: report.topCompetitors.map(c => c.name),
+          competitors: (report?.topCompetitors || []).map(c => c.name),
           excludedCompanies: [],
         },
         logs: [
-          { message: `Website analyzed — found ${report.products.length} products, ${report.services.length} services`, time: "Just now" },
-          { message: `ICP configured for ${report.estimatedICP.targetRoles.slice(0, 3).join(", ")} roles`, time: "Just now" },
-          { message: `Detected ${report.topCompetitors.length} competitors in your space`, time: "Just now" },
+          { message: `Website analyzed — found ${report?.products?.length || 0} products, ${report?.services?.length || 0} services`, time: "Just now" },
+          { message: `ICP configured for ${(report?.estimatedICP?.targetRoles || []).slice(0, 3).join(", ") || "Unknown"} roles`, time: "Just now" },
+          { message: `Detected ${report?.topCompetitors?.length || 0} competitors in your space`, time: "Just now" },
           { message: `Found ${leadsFromApi.length} high-intent leads matching your ICP`, time: "Just now" },
-          { message: `Agent is actively monitoring signals — ${report.estimatedICP.industries.length} industries tracked`, time: "Just now" },
+          { message: `Agent is actively monitoring signals — ${report?.estimatedICP?.industries?.length || 0} industries tracked`, time: "Just now" },
         ],
         leadsAnalyzed: leadsFromApi.length,
         icpMatchCount: Math.round(leadsFromApi.length * 0.6),
@@ -669,7 +646,7 @@ export const AppStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         workspaces, activeWorkspaceId, switchWorkspace,
         leads, leadSearchesThisMonth, aiMessagesThisMonth,
         agents, campaigns, leadLists,
-        login, logout, verifyOtp, selectPlan, runWebsiteScan,
+        login, logout, selectPlan, runWebsiteScan,
         updateWorkspaceName, connectHubspot, connectPipedrive,
         toggleSellingMode, sendOutreachAction, updateLeadStatus,
         enrichLead, resetScan, deleteWorkspace,
