@@ -142,7 +142,7 @@ function SidebarWrapper({ children }: { children: React.ReactNode }) {
               </div>
               <div className="border-t border-white/5 p-2">
                 <Link
-                  href="/signup"
+                  href={isLoggedIn ? "/onboarding" : "/signup"}
                   onClick={() => setWsDropdownOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors text-xs font-semibold text-primary"
                 >
