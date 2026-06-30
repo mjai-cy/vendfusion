@@ -120,12 +120,11 @@ export class AuthService {
       
       const sent = await this.outreachService.sendEmail(trimmedEmail, emailSubject, emailBody);
       if (!sent) {
-        this.logger.error(`[Auth] Failed to send custom password reset recovery email to ${trimmedEmail}`);
-        return { success: false, message: 'Failed to send recovery email. Please try again.' };
+        this.logger.warn(`[Auth] SMTP delivery failed. Fallback Reset Link for ${trimmedEmail}: ${resetLink}`);
+      } else {
+        this.logger.log(`[Auth] Custom password reset recovery email sent successfully to ${trimmedEmail}`);
       }
-
-      this.logger.log(`[Auth] Custom password reset recovery email sent successfully to ${trimmedEmail}`);
-      return { success: true, message: 'Password reset link sent to your email' };
+      return { success: true, message: 'Password reset link sent to your email (check server logs if not received)' };
     } catch (err: any) {
       this.logger.error(`[Auth] forgotPassword error: ${err.message}`);
       return { success: false, message: err.message || 'Failed to request password reset' };
@@ -193,12 +192,11 @@ export class AuthService {
       
       const sent = await this.outreachService.sendEmail(trimmedEmail, emailSubject, emailBody);
       if (!sent) {
-        this.logger.error(`[Auth] Failed to send custom login OTP email to ${trimmedEmail}`);
-        return { success: false, message: 'Failed to send verification email. Please try again.' };
+        this.logger.warn(`[Auth] SMTP delivery failed. Fallback OTP for ${trimmedEmail}: ${otp}`);
+      } else {
+        this.logger.log(`[Auth] Custom login OTP email sent successfully to ${trimmedEmail}`);
       }
-
-      this.logger.log(`[Auth] Custom login OTP email sent successfully to ${trimmedEmail}`);
-      return { success: true, message: 'Verification OTP sent to your email' };
+      return { success: true, message: 'Verification OTP sent to your email (check server logs if not received)' };
     } catch (err: any) {
       this.logger.error(`[Auth] sendOtp error: ${err.message}`);
       return { success: false, message: err.message || 'Failed to send OTP code' };

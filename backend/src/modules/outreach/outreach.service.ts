@@ -20,7 +20,10 @@ export class OutreachService {
         auth: { user: smtpUser, pass: smtpPass },
         tls: {
           rejectUnauthorized: false
-        }
+        },
+        connectionTimeout: 5000,
+        greetingTimeout: 5000,
+        socketTimeout: 5000,
       });
       this.logger.log(`SMTP transporter initialized: ${smtpUser} @ ${smtpHost}:${smtpPort}`);
     } else {
