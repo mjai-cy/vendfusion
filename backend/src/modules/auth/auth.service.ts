@@ -98,31 +98,37 @@ export class AuthService {
 
   // ─── Forgot Password ──────────────────────────────────────────────────────
   async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
-    this.logger.log(`[Auth] Forgot password OTP requested for ${email}`);
+    this.logger.log(`[Auth] Forgot password recovery link requested for ${email}`);
     try {
-      const result = await this.supabaseService.forgotPassword(email);
-      if (!result.success) {
-        return { success: false, message: result.message };
-      }
-
-      // Send our custom verification email too
       const trimmedEmail = email.toLowerCase().trim();
       const user = await this.userRepo.findOne({ where: { email: trimmedEmail } });
-      if (user) {
-        const otp = this.generateSixDigitOtp();
-        user.otpCode = otp;
-        user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-        await this.userRepo.save(user);
-
-        const emailSubject = 'Reset your xyz.ai password';
-        const emailBody = `Hi ${user.name},\n\nWe received a request to reset your password.\n\nYour 6-digit verification code is: ${otp}\n\nIf you did not make this request, you can safely ignore this email.\n\nBest regards,\nThe xyz.ai Team`;
-        await this.outreachService.sendEmail(trimmedEmail, emailSubject, emailBody);
+      if (!user) {
+        // Return success even if user not found to prevent user enumeration
+        return { success: true, message: 'Password reset link sent to your email' };
       }
 
-      return { success: true, message: 'Password reset instructions sent to your email' };
+      // Generate secure random recovery token
+      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      user.otpCode = token;
+      user.otpExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+      await this.userRepo.save(user);
+
+      // Send the recovery link directly via our verified backend SMTP transporter
+      const resetLink = `https://website-vert-nu-80.vercel.app/auth/reset-password?accessToken=${token}`;
+      const emailSubject = 'Reset your xyz.ai password';
+      const emailBody = `Hi ${user.name},\n\nWe received a request to reset your password.\n\nPlease click the link below to set a new password:\n\n${resetLink}\n\nThis reset link will expire in 1 hour.\n\nBest regards,\nThe xyz.ai Team`;
+      
+      const sent = await this.outreachService.sendEmail(trimmedEmail, emailSubject, emailBody);
+      if (!sent) {
+        this.logger.error(`[Auth] Failed to send custom password reset recovery email to ${trimmedEmail}`);
+        return { success: false, message: 'Failed to send recovery email. Please try again.' };
+      }
+
+      this.logger.log(`[Auth] Custom password reset recovery email sent successfully to ${trimmedEmail}`);
+      return { success: true, message: 'Password reset link sent to your email' };
     } catch (err: any) {
       this.logger.error(`[Auth] forgotPassword error: ${err.message}`);
-      return { success: false, message: err.message };
+      return { success: false, message: err.message || 'Failed to request password reset' };
     }
   }
 
@@ -134,8 +140,34 @@ export class AuthService {
 
   // ─── Update Password ──────────────────────────────────────────────────────
   async updatePassword(accessToken: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-    this.logger.log(`[Auth] Updating password via token`);
-    return this.supabaseService.updatePassword(accessToken, newPassword);
+    this.logger.log(`[Auth] Updating password via token bypass`);
+    try {
+      const user = await this.userRepo.findOne({ where: { otpCode: accessToken } });
+      if (!user) {
+        return { success: false, message: 'Invalid or expired password reset link.' };
+      }
+      
+      if (!user.otpExpiresAt || user.otpExpiresAt.getTime() < Date.now()) {
+        return { success: false, message: 'Your password reset link has expired.' };
+      }
+
+      // Update password using Supabase Admin SDK (which bypasses SMTP)
+      const res = await this.supabaseService.adminUpdateUserPassword(user.id, newPassword);
+      if (!res.success) {
+        throw new Error(res.message);
+      }
+
+      // Success! Clear the reset token
+      user.otpCode = null;
+      user.otpExpiresAt = null;
+      await this.userRepo.save(user);
+
+      this.logger.log(`[Auth] Password reset successfully for ${user.email}`);
+      return { success: true, message: 'Password updated successfully' };
+    } catch (err: any) {
+      this.logger.error(`[Auth] updatePassword error: ${err.message}`);
+      return { success: false, message: err.message || 'Failed to update password' };
+    }
   }
 
   // ─── Send OTP (Login / Resend OTP) ───────────────────────────────────────

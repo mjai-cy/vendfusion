@@ -27,7 +27,7 @@ export class SupabaseService {
     if (!this.adminClient) {
       const url = process.env.SUPABASE_URL;
       const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (!url || !serviceKey) {
+      if (!url || !serviceKey || serviceKey === 'NEEDS_TO_BE_SET') {
         this.logger.warn('[Supabase] SUPABASE_SERVICE_ROLE_KEY not set — DB writes may fail due to RLS. Falling back to anon key.');
         return this.supabase;
       }
@@ -130,6 +130,21 @@ export class SupabaseService {
       return { success: true, message: 'Password updated successfully' };
     } catch (err: any) {
       this.logger.error(`[Auth] updatePassword failed: ${err.message}`);
+      return { success: false, message: err.message };
+    }
+  }
+
+  // ─── Auth: Update password via admin client ─────────────────────────────────
+  async adminUpdateUserPassword(userId: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    try {
+      this.logger.log(`[Supabase] Admin updating password for user ${userId}`);
+      const { error } = await this.adminSupabase.auth.admin.updateUserById(userId, {
+        password: newPassword,
+      });
+      if (error) throw error;
+      return { success: true, message: 'Password updated successfully' };
+    } catch (err: any) {
+      this.logger.error(`[Supabase] adminUpdateUserPassword failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
