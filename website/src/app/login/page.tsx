@@ -13,20 +13,17 @@ function LoginForm() {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [sandboxOtp, setSandboxOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email) return;
 
     setLoading(true);
     setErrorMsg("");
-    setSandboxOtp("");
     try {
       const res = await fetch(`${BACKEND_URL}/auth/send-otp`, {
         method: "POST",
@@ -35,9 +32,6 @@ function LoginForm() {
       });
       const data = await res.json();
       if (data.success) {
-        if (data.mockOtp) {
-          setSandboxOtp(data.mockOtp);
-        }
         setOtpSent(true);
       } else {
         setErrorMsg(data.message || "Failed to send login OTP verification email");
@@ -112,21 +106,6 @@ function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between">
-              <span>Password</span>
-              <a href="#" className="text-primary hover:underline text-[9px] font-normal lowercase tracking-normal">Forgot password?</a>
-            </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
             />
           </div>

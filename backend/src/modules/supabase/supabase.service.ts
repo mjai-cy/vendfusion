@@ -6,6 +6,7 @@ export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
   private client: SupabaseClient | null = null;
   private adminClient: SupabaseClient | null = null;
+  private pendingPasswords = new Map<string, { password: string; name: string; expiresAt: number }>();
 
   constructor() {}
 
@@ -38,24 +39,24 @@ export class SupabaseService {
     return this.adminClient;
   }
 
-  // ─── Auth: Sign up new user with password (creates account + sends confirmation OTP) ──────
-  async signUpWithPassword(email: string, password: string): Promise<{ success: boolean; message: string }> {
+  // ─── Auth: Sign up new user — sends real OTP via signInWithOtp (not a confirmation link) ──
+  async signUpWithPassword(email: string, password: string, name?: string): Promise<{ success: boolean; message: string }> {
     try {
       this.logger.log(`[Supabase Auth] Signing up new user: ${email}`);
-      const { error } = await this.supabase.auth.signUp({
+      const { error } = await this.supabase.auth.signInWithOtp({
         email,
-        password,
-        options: { emailRedirectTo: undefined },
+        options: { shouldCreateUser: true },
       });
       if (error) throw error;
+      // Store password + name temporarily to set after OTP verification
+      this.pendingPasswords.set(email, {
+        password,
+        name: name || email.split('@')[0],
+        expiresAt: Date.now() + 10 * 60 * 1000,
+      });
       return { success: true, message: 'Verification OTP sent to your email' };
     } catch (err: any) {
-      this.logger.error(`[Supabase Auth] signUp failed: ${err.message}`);
-      // If user already exists, send a login OTP instead
-      if (err.message?.toLowerCase().includes('already registered') ||
-          err.message?.toLowerCase().includes('user already exists')) {
-        return this.sendOtp(email);
-      }
+      this.logger.error(`[Supabase Auth] signInWithOtp failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
@@ -89,7 +90,24 @@ export class SupabaseService {
 
       const userId = data.user?.id;
       if (!userId) throw new Error('Verification failed — no user returned from Supabase');
-      const name = data.user?.user_metadata?.name || email.split('@')[0];
+
+      // If there's a pending password from signup, set it now
+      const pending = this.pendingPasswords.get(email);
+      const name = pending?.name || data.user?.user_metadata?.name || email.split('@')[0];
+      if (pending) {
+        try {
+          const { error: pwError } = await this.adminSupabase.auth.admin.updateUserById(userId, {
+            password: pending.password,
+            user_metadata: { name },
+          });
+          if (pwError) throw pwError;
+          this.logger.log(`[Supabase Auth] Password set for ${email}`);
+        } catch (err: any) {
+          this.logger.warn(`[Supabase Auth] Could not set password (non-blocking): ${err.message}`);
+        }
+        this.pendingPasswords.delete(email);
+      }
+
       await this.upsertUser(userId, email, name);
       return { success: true, message: 'Email verified', userId, name };
     } catch (err: any) {

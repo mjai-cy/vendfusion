@@ -9,10 +9,10 @@ export class AuthService {
 
   async signUpWithPassword(email: string, password: string, name?: string): Promise<{ success: boolean; message: string }> {
     this.logger.log(`[Auth] Signing up user: ${email}`);
-    return this.supabaseService.signUpWithPassword(email, password);
+    return this.supabaseService.signUpWithPassword(email, password, name);
   }
 
-  async sendOtp(email: string): Promise<{ success: boolean; message: string; mockOtp?: string }> {
+  async sendOtp(email: string): Promise<{ success: boolean; message: string }> {
     this.logger.log(`[Auth] Sending login OTP to ${email} via Supabase`);
     return this.supabaseService.sendOtp(email);
   }
