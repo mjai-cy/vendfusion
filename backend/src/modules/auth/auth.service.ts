@@ -26,4 +26,9 @@ export class AuthService {
     this.logger.log(`[Auth] Forgot password for ${email}`);
     return this.supabaseService.forgotPassword(email);
   }
+
+  async verifyMagicLink(accessToken: string): Promise<{ success: boolean; message: string; userId?: string; name?: string; email?: string }> {
+    this.logger.log(`[Auth] Verifying magic link`);
+    return this.supabaseService.verifyMagicLink(accessToken);
+  }
 }

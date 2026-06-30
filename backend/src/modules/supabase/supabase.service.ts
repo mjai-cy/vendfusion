@@ -52,7 +52,10 @@ export class SupabaseService {
       this.logger.log(`[Auth] Signing up new user: ${email}`);
       const { error } = await this.supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: true },
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback`,
+        },
       });
       if (error) throw error;
       this.pendingPasswords.set(email, {
@@ -96,6 +99,38 @@ export class SupabaseService {
       return { success: true, message: 'Password reset OTP sent to your email' };
     } catch (err: any) {
       this.logger.error(`[Auth] resetPasswordForEmail failed: ${err.message}`);
+      return { success: false, message: err.message };
+    }
+  }
+
+  // ─── Auth: Handle magic link click (access_token from URL hash) ───────────
+  async verifyMagicLink(accessToken: string): Promise<{ success: boolean; message: string; userId?: string; name?: string; email?: string }> {
+    try {
+      const { data, error } = await this.supabase.auth.getUser(accessToken);
+      if (error) throw error;
+      const user = data.user;
+      if (!user) throw new Error('No user found');
+
+      const email = user.email!;
+      const pending = this.pendingPasswords.get(email);
+      const name = pending?.name || user.user_metadata?.name || email.split('@')[0];
+
+      if (pending) {
+        this.pendingPasswords.delete(email);
+        try {
+          await this.adminSupabase.auth.admin.updateUserById(user.id, {
+            password: pending.password,
+            user_metadata: { name },
+          });
+        } catch (err: any) {
+          this.logger.warn(`[Auth] Could not set password via magic link (non-blocking): ${err.message}`);
+        }
+      }
+
+      await this.upsertUser(user.id, email, name);
+      return { success: true, message: 'Email verified', userId: user.id, name, email };
+    } catch (err: any) {
+      this.logger.error(`[Auth] verifyMagicLink failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }

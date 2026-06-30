@@ -43,4 +43,13 @@ export class AuthController {
     }
     return this.authService.forgotPassword(email);
   }
+
+  // ─── Magic link callback: verify access_token from URL hash ──────────────
+  @Post('verify-magic-link')
+  async verifyMagicLink(@Body('accessToken') accessToken: string) {
+    if (!accessToken) {
+      return { success: false, message: 'Access token is required' };
+    }
+    return this.authService.verifyMagicLink(accessToken);
+  }
 }
