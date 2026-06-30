@@ -3,7 +3,7 @@ import { Workspace } from './workspace.entity';
 
 @Entity('campaigns')
 export class Campaign {
-  @PrimaryGeneratedColumn('uuid')
+  @Column({ primary: true })
   id: string;
 
   @Column()

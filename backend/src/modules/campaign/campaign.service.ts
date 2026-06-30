@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as crypto from 'crypto';
 import { Campaign } from '../../entities';
 
 @Injectable()
@@ -23,9 +24,9 @@ export class CampaignService {
   }
 
   async create(data: Partial<Campaign>): Promise<Campaign> {
-    const { id, ...rest } = data;
-    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    const campaign = this.repo.create(isUuid ? data : rest);
+    const createData = { ...data };
+    if (!createData.id) createData.id = crypto.randomUUID();
+    const campaign = this.repo.create(createData as Campaign);
     const saved = await this.repo.save(campaign);
     this.logger.log(`Campaign created: ${saved.id} — ${saved.name}`);
     return saved;

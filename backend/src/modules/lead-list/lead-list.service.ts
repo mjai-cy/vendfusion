@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as crypto from 'crypto';
 import { LeadList } from '../../entities';
 
 @Injectable()
@@ -23,9 +24,9 @@ export class LeadListService {
   }
 
   async create(data: Partial<LeadList>): Promise<LeadList> {
-    const { id, ...rest } = data;
-    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    const list = this.repo.create(isUuid ? data : rest);
+    const createData = { ...data };
+    if (!createData.id) createData.id = crypto.randomUUID();
+    const list = this.repo.create(createData as LeadList);
     const saved = await this.repo.save(list);
     this.logger.log(`LeadList created: ${saved.id} — ${saved.name}`);
     return saved;

@@ -3,7 +3,7 @@ import { Workspace } from './workspace.entity';
 
 @Entity('lead_lists')
 export class LeadList {
-  @PrimaryGeneratedColumn('uuid')
+  @Column({ primary: true })
   id: string;
 
   @Column()
