@@ -1,11 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, Column, CreateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { User } from './user.entity';
-import { Lead } from './lead.entity';
-import { Campaign } from './campaign.entity';
 import { Visitor } from './visitor.entity';
 import { UploadedFile } from './uploaded-file.entity';
-import { Agent } from './agent.entity';
-import { LeadList } from './lead-list.entity';
 
 @Entity('workspaces')
 export class Workspace {
@@ -57,18 +53,6 @@ export class Workspace {
 
   @Column()
   userId: string;
-
-  @OneToMany(() => Lead, lead => lead.workspace)
-  leads: Lead[];
-
-  @OneToMany(() => Campaign, camp => camp.workspace)
-  campaigns: Campaign[];
-
-  @OneToMany(() => Agent, agent => agent.workspace)
-  agents: Agent[];
-
-  @OneToMany(() => LeadList, ll => ll.workspace)
-  leadLists: LeadList[];
 
   @OneToMany(() => Visitor, v => v.workspace)
   visitors: Visitor[];

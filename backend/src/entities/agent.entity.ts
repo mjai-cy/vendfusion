@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Workspace } from './workspace.entity';
+import { Entity, Column, CreateDateColumn } from 'typeorm';
 
 @Entity('agents')
 export class Agent {
@@ -53,10 +52,6 @@ export class Agent {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @ManyToOne(() => Workspace, ws => ws.agents, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'workspaceId' })
-  workspace: Workspace;
 
   @Column()
   workspaceId: string;

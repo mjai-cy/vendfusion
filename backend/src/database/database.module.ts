@@ -3,10 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User, Workspace, Lead, Campaign, Visitor, UploadedFile, SystemSetting, Agent, LeadList } from '../entities';
 
 function getDatabaseConfig() {
-  const url = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+  const url = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
 
-  if (!url || url.includes('supabase.co')) {
-    Logger.warn('[Database] No correct PostgreSQL Database URL found. Running in sqlite sandbox mode.');
+  if (!url) {
+    Logger.warn('[Database] No PostgreSQL Database URL found. Running in sqlite sandbox mode.');
     return {
       type: 'sqlite' as const,
       database: ':memory:',
