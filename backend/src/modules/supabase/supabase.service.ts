@@ -6,16 +6,8 @@ export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
   private client: SupabaseClient | null = null;
   private adminClient: SupabaseClient | null = null;
-  private pendingPasswords = new Map<string, { password: string; name: string; expiresAt: number }>();
 
-  constructor() {
-    setInterval(() => {
-      const now = Date.now();
-      for (const [email, data] of this.pendingPasswords) {
-        if (now > data.expiresAt) this.pendingPasswords.delete(email);
-      }
-    }, 5 * 60 * 1000);
-  }
+  constructor() {}
 
   // ─── Anon client — used only for Auth operations ──────────────────────────
   private get supabase(): SupabaseClient {
@@ -46,26 +38,22 @@ export class SupabaseService {
     return this.adminClient;
   }
 
-  // ─── Auth: Sign up — sends OTP via Supabase Auth (signInWithOtp) ───────────
+  // ─── Auth: Sign up — sends confirmation link via Supabase Auth ─────────────
   async signUpWithPassword(email: string, password: string, name?: string): Promise<{ success: boolean; message: string }> {
     try {
       this.logger.log(`[Auth] Signing up new user: ${email}`);
-      const { error } = await this.supabase.auth.signInWithOtp({
+      const { error } = await this.supabase.auth.signUp({
         email,
+        password,
         options: {
-          shouldCreateUser: true,
           emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback`,
+          data: { name: name || email.split('@')[0] },
         },
       });
       if (error) throw error;
-      this.pendingPasswords.set(email, {
-        password,
-        name: name || email.split('@')[0],
-        expiresAt: Date.now() + 10 * 60 * 1000,
-      });
-      return { success: true, message: 'Verification OTP sent to your email' };
+      return { success: true, message: 'Confirmation link sent to your email' };
     } catch (err: any) {
-      this.logger.error(`[Auth] signInWithOtp failed: ${err.message}`);
+      this.logger.error(`[Auth] signUp failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
@@ -90,86 +78,58 @@ export class SupabaseService {
     }
   }
 
-  // ─── Auth: Forgot password — sends OTP via Supabase ───────────────────────
+  // ─── Auth: Forgot password — sends recovery link via Supabase ─────────────
   async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
     try {
-      this.logger.log(`[Auth] Forgot password OTP for ${email}`);
-      const { error } = await this.supabase.auth.resetPasswordForEmail(email);
+      this.logger.log(`[Auth] Forgot password for ${email}`);
+      const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback`,
+      });
       if (error) throw error;
-      return { success: true, message: 'Password reset OTP sent to your email' };
+      return { success: true, message: 'Password reset link sent to your email' };
     } catch (err: any) {
       this.logger.error(`[Auth] resetPasswordForEmail failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
 
-  // ─── Auth: Handle magic link click (access_token from URL hash) ───────────
-  async verifyMagicLink(accessToken: string): Promise<{ success: boolean; message: string; userId?: string; name?: string; email?: string }> {
+  // ─── Auth: Verify link clicked (confirmation or recovery) ─────────────────
+  async verifyLink(accessToken: string): Promise<{ success: boolean; message: string; userId?: string; name?: string; email?: string }> {
     try {
       const { data, error } = await this.supabase.auth.getUser(accessToken);
       if (error) throw error;
       const user = data.user;
-      if (!user) throw new Error('No user found');
+      if (!user || !user.email) throw new Error('No user found');
 
-      const email = user.email!;
-      const pending = this.pendingPasswords.get(email);
-      const name = pending?.name || user.user_metadata?.name || email.split('@')[0];
-
-      if (pending) {
-        this.pendingPasswords.delete(email);
-        try {
-          await this.adminSupabase.auth.admin.updateUserById(user.id, {
-            password: pending.password,
-            user_metadata: { name },
-          });
-        } catch (err: any) {
-          this.logger.warn(`[Auth] Could not set password via magic link (non-blocking): ${err.message}`);
-        }
-      }
-
-      await this.upsertUser(user.id, email, name);
-      return { success: true, message: 'Email verified', userId: user.id, name, email };
+      const name = user.user_metadata?.name || user.email.split('@')[0];
+      await this.upsertUser(user.id, user.email, name);
+      return { success: true, message: 'Email verified', userId: user.id, name, email: user.email };
     } catch (err: any) {
-      this.logger.error(`[Auth] verifyMagicLink failed: ${err.message}`);
+      this.logger.error(`[Auth] verifyLink failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
 
-  // ─── Auth: Verify OTP via Supabase Auth ────────────────────────────────────
-  async verifyOtp(email: string, token: string): Promise<{ success: boolean; message: string; userId?: string; name?: string }> {
+  // ─── Auth: Update password (for reset-password flow) ──────────────────────
+  async updatePassword(accessToken: string, newPassword: string): Promise<{ success: boolean; message: string }> {
     try {
-      this.logger.log(`[Auth] Verifying OTP for ${email}`);
-      const { data, error } = await this.supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email',
+      // Create a temporary authed client using the access token from the recovery link
+      const tempClient = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      );
+      const { error: sessionError } = await tempClient.auth.setSession({
+        access_token: accessToken,
+        refresh_token: '',
       });
+      if (sessionError) throw sessionError;
+
+      const { error } = await tempClient.auth.updateUser({ password: newPassword });
       if (error) throw error;
-
-      const userId = data.user?.id;
-      if (!userId) throw new Error('Verification failed — no user returned from Supabase');
-
-      const pending = this.pendingPasswords.get(email);
-      const name = pending?.name || data.user?.user_metadata?.name || email.split('@')[0];
-
-      if (pending) {
-        this.pendingPasswords.delete(email);
-        try {
-          const { error: pwError } = await this.adminSupabase.auth.admin.updateUserById(userId, {
-            password: pending.password,
-            user_metadata: { name },
-          });
-          if (pwError) throw pwError;
-          this.logger.log(`[Auth] Password set for ${email}`);
-        } catch (err: any) {
-          this.logger.warn(`[Auth] Could not set password (non-blocking): ${err.message}`);
-        }
-      }
-
-      await this.upsertUser(userId, email, name);
-      return { success: true, message: 'Email verified', userId, name };
+      return { success: true, message: 'Password updated successfully' };
     } catch (err: any) {
-      this.logger.error(`[Auth] verifyOtp failed: ${err.message}`);
+      this.logger.error(`[Auth] updatePassword failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }

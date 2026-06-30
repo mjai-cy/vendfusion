@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // ─── Signup: creates account with password + sends verification OTP ───────
+  // ─── Signup: creates account with password + sends confirmation link ─────
   @Post('signup')
   async signup(@Body('email') email: string, @Body('password') password: string, @Body('name') name: string) {
     if (!email || !password) {
@@ -26,16 +26,7 @@ export class AuthController {
     return this.authService.signInWithPassword(email, password);
   }
 
-  // ─── Verify OTP (for signup verification) ────────────────────────────────
-  @Post('verify-otp')
-  async verifyOtp(@Body('email') email: string, @Body('otp') otp: string) {
-    if (!email || !otp) {
-      return { success: false, message: 'Email and OTP code are required' };
-    }
-    return this.authService.verifyOtp(email, otp);
-  }
-
-  // ─── Forgot password: sends OTP to reset ─────────────────────────────────
+  // ─── Forgot password: sends recovery link ────────────────────────────────
   @Post('forgot-password')
   async forgotPassword(@Body('email') email: string) {
     if (!email) {
@@ -44,12 +35,24 @@ export class AuthController {
     return this.authService.forgotPassword(email);
   }
 
-  // ─── Magic link callback: verify access_token from URL hash ──────────────
-  @Post('verify-magic-link')
-  async verifyMagicLink(@Body('accessToken') accessToken: string) {
+  // ─── Verify link clicked (confirmation or recovery) ──────────────────────
+  @Post('verify-link')
+  async verifyLink(@Body('accessToken') accessToken: string) {
     if (!accessToken) {
       return { success: false, message: 'Access token is required' };
     }
-    return this.authService.verifyMagicLink(accessToken);
+    return this.authService.verifyLink(accessToken);
+  }
+
+  // ─── Update password (after recovery link click) ─────────────────────────
+  @Post('update-password')
+  async updatePassword(@Body('accessToken') accessToken: string, @Body('newPassword') newPassword: string) {
+    if (!accessToken || !newPassword) {
+      return { success: false, message: 'Access token and new password are required' };
+    }
+    if (newPassword.length < 6) {
+      return { success: false, message: 'Password must be at least 6 characters' };
+    }
+    return this.authService.updatePassword(accessToken, newPassword);
   }
 }

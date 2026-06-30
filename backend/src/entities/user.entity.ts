@@ -27,6 +27,12 @@ export class User {
   @Column({ nullable: true })
   zohoAuthToken: string;
 
+  @Column({ nullable: true })
+  otpCode: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  otpExpiresAt: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 
