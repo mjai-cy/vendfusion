@@ -1,19 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { OutreachService } from '../outreach/outreach.service';
-
-interface OtpMemory {
-  otp: string;
-  expiresAt: number;
-}
 
 @Injectable()
 export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
   private client: SupabaseClient | null = null;
-  private otpMap = new Map<string, OtpMemory>();
 
-  constructor(private readonly outreachService: OutreachService) {}
+  constructor() {}
 
   private get supabase(): SupabaseClient {
     if (!this.client) {
@@ -28,7 +21,7 @@ export class SupabaseService {
   }
 
   // ─── Auth: Send OTP via Supabase Auth ──────────────────────────────────────
-  async sendOtp(email: string): Promise<{ success: boolean; message: string; mockOtp?: string }> {
+  async sendOtp(email: string): Promise<{ success: boolean; message: string }> {
     try {
       this.logger.log(`[Supabase Auth] Requesting OTP send via Supabase client for ${email}`);
       const { error } = await this.supabase.auth.signInWithOtp({
@@ -39,15 +32,7 @@ export class SupabaseService {
       return { success: true, message: 'OTP sent to your email' };
     } catch (err: any) {
       this.logger.error(`[Supabase Auth] signInWithOtp failed: ${err.message}`);
-      // Internal code fallback generation in case client credential settings are not working yet
-      const backupOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = Date.now() + 10 * 60 * 1000;
-      this.otpMap.set(email.toLowerCase(), { otp: backupOtp, expiresAt });
-      return {
-        success: true,
-        message: 'OTP sent (running in backend fallback mode)',
-        mockOtp: backupOtp
-      };
+      return { success: false, message: err.message };
     }
   }
 
@@ -60,17 +45,7 @@ export class SupabaseService {
         token,
         type: 'email',
       });
-      if (error) {
-        // Try fallback memory verification if real Supabase Auth returns error
-        const backup = this.otpMap.get(email.toLowerCase());
-        if (backup && backup.otp === token && Date.now() < backup.expiresAt) {
-          this.otpMap.delete(email.toLowerCase());
-          const userId = `usr_${Date.now()}`;
-          await this.upsertUser(userId, email, email.split('@')[0]);
-          return { success: true, message: 'Verified via fallback verification key', userId };
-        }
-        throw error;
-      }
+      if (error) throw error;
       
       const userId = data.user?.id || `usr_${Date.now()}`;
       await this.upsertUser(userId, email, email.split('@')[0]);

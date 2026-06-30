@@ -141,10 +141,7 @@ function SignupForm() {
             </h1>
             <p className="text-xs text-gray-400">
               {otpSent 
-                ? (sandboxOtp 
-                    ? `Verification email delivery status: Pending. Use code: ${sandboxOtp} to bypass.`
-                    : `We've sent a 6-digit verification code to ${email}`
-                  )
+                ? `We've sent a 6-digit verification code to ${email}`
                 : "Free trial. No credit card required."
               }
             </p>

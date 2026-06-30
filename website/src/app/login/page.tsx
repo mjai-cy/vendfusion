@@ -90,10 +90,7 @@ function LoginForm() {
         </h1>
         <p className="text-xs text-gray-400">
           {otpSent 
-            ? (sandboxOtp 
-                ? `Verification email delivery status: Pending. Use code: ${sandboxOtp} to bypass.`
-                : `We've sent a 6-digit verification code to ${email}`
-              )
+            ? `We've sent a 6-digit verification code to ${email}`
             : "Sign in to manage your AI agent."
           }
         </p>
