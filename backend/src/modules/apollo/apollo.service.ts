@@ -108,35 +108,29 @@ export class ApolloService {
 
   async searchLeads(filters: ApolloSearchFilters): Promise<{ leads: ApolloLead[]; total: number }> {
     if (!this.apiKey) {
-      this.logger.warn('[Apollo] No API key — returning mock data');
-      return this.mockLeads();
+      throw new Error('Apollo API credentials not configured');
     }
 
-    try {
-      const body: Record<string, any> = {
-        page: filters.page || 1,
-        per_page: filters.per_page || 10,
-      };
+    const body: Record<string, any> = {
+      page: filters.page || 1,
+      per_page: filters.per_page || 10,
+    };
 
-      if (filters.titles?.length)        body.person_titles = filters.titles;
-      if (filters.industries?.length)    body.organization_industry_tag_ids = filters.industries;
-      if (filters.company_sizes?.length) body.organization_num_employees_ranges = filters.company_sizes;
-      if (filters.domains?.length)       body.q_organization_domains = filters.domains.join('\n');
-      if (filters.keywords?.length)      body.q_keywords = filters.keywords.join(' ');
-      if (filters.countries?.length)     body.person_locations = filters.countries;
+    if (filters.titles?.length)        body.person_titles = filters.titles;
+    if (filters.industries?.length)    body.organization_industry_tag_ids = filters.industries;
+    if (filters.company_sizes?.length) body.organization_num_employees_ranges = filters.company_sizes;
+    if (filters.domains?.length)       body.q_organization_domains = filters.domains.join('\n');
+    if (filters.keywords?.length)      body.q_keywords = filters.keywords.join(' ');
+    if (filters.countries?.length)     body.person_locations = filters.countries;
 
-      const data = await this.apolloPost('/contacts/search', body);
-      const people = data.contacts || data.people || [];
+    const data = await this.apolloPost('/contacts/search', body);
+    const people = data.contacts || data.people || [];
 
-      this.logger.log(`[Apollo] People search returned ${people.length} contacts`);
-      return {
-        leads: people.map((p: any) => this.mapPerson(p)),
-        total: data.pagination?.total_entries || people.length,
-      };
-    } catch (err) {
-      this.logger.error('[Apollo] searchLeads failed — falling back to mock', err);
-      return this.mockLeads();
-    }
+    this.logger.log(`[Apollo] People search returned ${people.length} contacts`);
+    return {
+      leads: people.map((p: any) => this.mapPerson(p)),
+      total: data.pagination?.total_entries || people.length,
+    };
   }
 
   // ─── 2. Enrich a Contact (by email or LinkedIn URL) ──────────────────────

@@ -178,40 +178,36 @@ Return ONLY raw JSON array (no markdown):
 
   // ─── Fetch real leads from Apollo ────────────────────────────────────────
   private async fetchRealLeads(report: ScanReport): Promise<any[]> {
-    try {
-      this.logger.log(`[Scan] Querying Apollo for real leads matching ${report.companyName}`);
-      const searchRes = await this.apolloService.searchLeads({
-        titles: report.estimatedICP.targetRoles,
-        industries: report.estimatedICP.industries,
-        per_page: 10,
-      });
+    this.logger.log(`[Scan] Querying Apollo for real leads matching ${report.companyName}`);
+    const searchRes = await this.apolloService.searchLeads({
+      titles: report.estimatedICP.targetRoles,
+      industries: report.estimatedICP.industries,
+      per_page: 10,
+    });
 
-      if (searchRes?.leads?.length) {
-        this.logger.log(`[Scan] Apollo returned ${searchRes.leads.length} real leads`);
-        return searchRes.leads.map((p, i) => ({
-          id: p.id || `lead-${Date.now()}-${i}`,
-          name: p.name,
-          role: p.title,
-          companyName: p.company,
-          domain: p.company_domain || '',
-          intentScore: p.intent_score || Math.floor(Math.random() * 20) + 75,
-          intentSignals: [
-            'Competitor post interaction',
-            'Recent funding round',
-            'Active in target LinkedIn groups',
-            'Job change signal',
-          ],
-          email: p.email || `${p.name.toLowerCase().replace(/\s+/g, '.')}@${p.company_domain || 'domain.com'}`,
-          phone: `+1-555-${Math.floor(1000 + Math.random() * 9000)}`,
-          linkedinUrl: p.linkedin_url || 'https://linkedin.com',
-          outreachStatus: 'new',
-          enrichmentStatus: 'enriched',
-        }));
-      }
-    } catch (err: any) {
-      this.logger.error(`[Scan] Apollo fetch failed: ${err.message}`);
+    if (searchRes?.leads?.length) {
+      this.logger.log(`[Scan] Apollo returned ${searchRes.leads.length} real leads`);
+      return searchRes.leads.map((p, i) => ({
+        id: p.id || `lead-${Date.now()}-${i}`,
+        name: p.name,
+        role: p.title,
+        companyName: p.company,
+        domain: p.company_domain || '',
+        intentScore: p.intent_score || Math.floor(Math.random() * 20) + 75,
+        intentSignals: [
+          'Competitor post interaction',
+          'Recent funding round',
+          'Active in target LinkedIn groups',
+          'Job change signal',
+        ],
+        email: p.email || `${p.name.toLowerCase().replace(/\s+/g, '.')}@${p.company_domain || 'domain.com'}`,
+        phone: `+1-555-${Math.floor(1000 + Math.random() * 9000)}`,
+        linkedinUrl: p.linkedin_url || 'https://linkedin.com',
+        outreachStatus: 'new',
+        enrichmentStatus: 'enriched',
+      }));
     }
-    return this.fallbackLeads();
+    return [];
   }
 
   // ─── Fallbacks ────────────────────────────────────────────────────────────
@@ -242,15 +238,6 @@ Return ONLY raw JSON array (no markdown):
       ],
       aiReadinessScore: 74,
     };
-  }
-
-  private fallbackLeads(): any[] {
-    const now = Date.now();
-    return [
-      { id: `lead-${now}-1`, name: 'Rajesh Mehta', role: 'CTO', companyName: 'TechVista Solutions', domain: 'techvista.in', intentScore: 92, intentSignals: ['Competitor post interaction', 'Active in target hashtags', 'Company hiring spike'], email: 'rajesh.m@techvista.in', phone: '+91 98251 02847', linkedinUrl: 'https://linkedin.com/in/rajesh-mehta', outreachStatus: 'new', enrichmentStatus: 'enriched' },
-      { id: `lead-${now}-2`, name: 'Priya Sharma', role: 'VP of Engineering', companyName: 'DataCraft Labs', domain: 'datacraft.io', intentScore: 88, intentSignals: ['Recent funding round', 'Similar tech stack', 'Shared your blog post'], email: 'priya@datacraft.io', phone: '+91 91726 48392', linkedinUrl: 'https://linkedin.com/in/priya-sharma', outreachStatus: 'new', enrichmentStatus: 'enriched' },
-      { id: `lead-${now}-3`, name: 'Arun Patel', role: 'Director of Operations', companyName: 'LogiNext Systems', domain: 'loginext.com', intentScore: 85, intentSignals: ['Profile visit (3x in 7 days)', 'Job change (new role)', 'Attended competitor webinar'], email: 'arun.p@loginext.com', phone: '+91 99182 37461', linkedinUrl: 'https://linkedin.com/in/arun-patel', outreachStatus: 'new', enrichmentStatus: 'enriched' },
-    ];
   }
 
   private fallbackPersonas(): PersonaResult[] {
