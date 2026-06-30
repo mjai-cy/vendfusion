@@ -17,7 +17,16 @@ export class AuthController {
     return this.authService.signUpWithPassword(email, password, name);
   }
 
-  // ─── Login: sends OTP for existing users ─────────────────────────────────
+  // ─── Login: password-based ───────────────────────────────────────────────
+  @Post('login')
+  async login(@Body('email') email: string, @Body('password') password: string) {
+    if (!email || !password) {
+      return { success: false, message: 'Email and password are required' };
+    }
+    return this.authService.signInWithPassword(email, password);
+  }
+
+  // ─── Login: OTP-based (for existing users) ───────────────────────────────
   @Post('send-otp')
   async sendOtp(@Body('email') email: string) {
     if (!email) {
@@ -33,5 +42,14 @@ export class AuthController {
       return { success: false, message: 'Email and OTP code are required' };
     }
     return this.authService.verifyOtp(email, otp);
+  }
+
+  // ─── Forgot password: sends OTP to reset ─────────────────────────────────
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    if (!email) {
+      return { success: false, message: 'Email address is required' };
+    }
+    return this.authService.forgotPassword(email);
   }
 }

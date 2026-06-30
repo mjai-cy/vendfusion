@@ -9,7 +9,6 @@ export class SupabaseService {
   private pendingPasswords = new Map<string, { password: string; name: string; expiresAt: number }>();
 
   constructor() {
-    // Clean up expired pending passwords every 5 minutes
     setInterval(() => {
       const now = Date.now();
       for (const [email, data] of this.pendingPasswords) {
@@ -80,6 +79,39 @@ export class SupabaseService {
       return { success: true, message: 'OTP sent to your email' };
     } catch (err: any) {
       this.logger.error(`[Auth] signInWithOtp failed: ${err.message}`);
+      return { success: false, message: err.message };
+    }
+  }
+
+  // ─── Auth: Password-based login ───────────────────────────────────────────
+  async signInWithPassword(email: string, password: string): Promise<{ success: boolean; message: string; userId?: string; name?: string }> {
+    try {
+      this.logger.log(`[Auth] Password login for ${email}`);
+      const { data, error } = await this.supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      const userId = data.user?.id;
+      if (!userId) throw new Error('Login failed — no user returned');
+      const name = data.user?.user_metadata?.name || email.split('@')[0];
+      await this.upsertUser(userId, email, name);
+      return { success: true, message: 'Login successful', userId, name };
+    } catch (err: any) {
+      this.logger.error(`[Auth] signInWithPassword failed: ${err.message}`);
+      return { success: false, message: err.message };
+    }
+  }
+
+  // ─── Auth: Forgot password — sends OTP via Supabase ───────────────────────
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      this.logger.log(`[Auth] Forgot password OTP for ${email}`);
+      const { error } = await this.supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      return { success: true, message: 'Password reset OTP sent to your email' };
+    } catch (err: any) {
+      this.logger.error(`[Auth] resetPasswordForEmail failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }

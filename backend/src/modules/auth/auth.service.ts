@@ -21,4 +21,14 @@ export class AuthService {
     this.logger.log(`[Auth] Verifying OTP for ${email}`);
     return this.supabaseService.verifyOtp(email, otp);
   }
+
+  async signInWithPassword(email: string, password: string): Promise<{ success: boolean; message: string; userId?: string; name?: string }> {
+    this.logger.log(`[Auth] Password login for ${email}`);
+    return this.supabaseService.signInWithPassword(email, password);
+  }
+
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    this.logger.log(`[Auth] Forgot password for ${email}`);
+    return this.supabaseService.forgotPassword(email);
+  }
 }
