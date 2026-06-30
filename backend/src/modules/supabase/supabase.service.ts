@@ -1,56 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import * as nodemailer from 'nodemailer';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
   private client: SupabaseClient | null = null;
   private adminClient: SupabaseClient | null = null;
-
-  // ─── Custom OTP store (in-memory, bypasses Supabase email entirely) ───────
-  private otpStore = new Map<string, { otp: string; expiresAt: number }>();
   private pendingPasswords = new Map<string, { password: string; name: string; expiresAt: number }>();
 
-  constructor() {}
-
-  // ─── Nodemailer transporter for sending custom OTP emails ──────────────────
-  private get mailTransporter(): nodemailer.Transporter {
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = parseInt(process.env.SMTP_PORT || '587', 10);
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
-    if (!user || !pass) {
-      this.logger.warn('[Mail] SMTP_USER or SMTP_PASS not set — OTP emails will fail.');
-    }
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: user && pass ? { user, pass } : undefined,
-    });
-  }
-
-  private generateOtp(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  }
-
-  private async sendOtpEmail(email: string, otp: string): Promise<void> {
-    const transporter = this.mailTransporter;
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"xyz.ai" <noreply@xyzai.com>',
-      to: email,
-      subject: 'Your OTP for xyz.ai',
-      text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto">
-        <h2 style="color:#6366f1;">xyz.ai Verification</h2>
-        <p>Your verification code is:</p>
-        <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#6366f1;text-align:center;padding:16px;background:#f5f3ff;border-radius:8px;margin:16px 0">${otp}</div>
-        <p style="color:#666;">This code expires in <strong>10 minutes</strong>.</p>
-        <p style="color:#999;font-size:12px;">If you didn't request this, please ignore this email.</p>
-      </div>`,
-    });
+  constructor() {
+    // Clean up expired pending passwords every 5 minutes
+    setInterval(() => {
+      const now = Date.now();
+      for (const [email, data] of this.pendingPasswords) {
+        if (now > data.expiresAt) this.pendingPasswords.delete(email);
+      }
+    }, 5 * 60 * 1000);
   }
 
   // ─── Anon client — used only for Auth operations ──────────────────────────
@@ -82,13 +47,15 @@ export class SupabaseService {
     return this.adminClient;
   }
 
-  // ─── Auth: Sign up — sends real 6-digit OTP via SMTP (not Supabase email) ──
+  // ─── Auth: Sign up — sends OTP via Supabase Auth (signInWithOtp) ───────────
   async signUpWithPassword(email: string, password: string, name?: string): Promise<{ success: boolean; message: string }> {
     try {
       this.logger.log(`[Auth] Signing up new user: ${email}`);
-      const otp = this.generateOtp();
-      await this.sendOtpEmail(email, otp);
-      this.otpStore.set(email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 });
+      const { error } = await this.supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      });
+      if (error) throw error;
       this.pendingPasswords.set(email, {
         password,
         name: name || email.split('@')[0],
@@ -96,121 +63,63 @@ export class SupabaseService {
       });
       return { success: true, message: 'Verification OTP sent to your email' };
     } catch (err: any) {
-      this.logger.error(`[Auth] signup OTP send failed: ${err.message}`);
+      this.logger.error(`[Auth] signInWithOtp failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
 
-  // ─── Auth: Send OTP for login — via SMTP, not Supabase ────────────────────
+  // ─── Auth: Send OTP for login (via Supabase Auth) ─────────────────────────
   async sendOtp(email: string): Promise<{ success: boolean; message: string }> {
     try {
       this.logger.log(`[Auth] Sending login OTP to ${email}`);
-      const otp = this.generateOtp();
-      await this.sendOtpEmail(email, otp);
-      this.otpStore.set(email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 });
+      const { error } = await this.supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      });
+      if (error) throw error;
       return { success: true, message: 'OTP sent to your email' };
     } catch (err: any) {
-      this.logger.error(`[Auth] sendOtp failed: ${err.message}`);
+      this.logger.error(`[Auth] signInWithOtp failed: ${err.message}`);
       return { success: false, message: err.message };
     }
   }
 
-  // ─── Auth: Verify custom OTP, then create/find user in Supabase Auth ──────
+  // ─── Auth: Verify OTP via Supabase Auth ────────────────────────────────────
   async verifyOtp(email: string, token: string): Promise<{ success: boolean; message: string; userId?: string; name?: string }> {
     try {
       this.logger.log(`[Auth] Verifying OTP for ${email}`);
+      const { data, error } = await this.supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
+      });
+      if (error) throw error;
 
-      // 1. Check custom OTP store
-      const stored = this.otpStore.get(email);
-      if (!stored) {
-        return { success: false, message: 'No OTP sent to this email. Please request a new one.' };
-      }
-      if (Date.now() > stored.expiresAt) {
-        this.otpStore.delete(email);
-        return { success: false, message: 'OTP has expired. Please request a new one.' };
-      }
-      if (stored.otp !== token) {
-        return { success: false, message: 'Invalid OTP code entered.' };
-      }
-      this.otpStore.delete(email);
+      const userId = data.user?.id;
+      if (!userId) throw new Error('Verification failed — no user returned from Supabase');
 
-      // 2. Check if this is a signup (has pending password) or login
       const pending = this.pendingPasswords.get(email);
-      const name = pending?.name || email.split('@')[0];
+      const name = pending?.name || data.user?.user_metadata?.name || email.split('@')[0];
 
       if (pending) {
-        // ─── Signup: create user in Supabase Auth via admin API ──────────
         this.pendingPasswords.delete(email);
-        let userId: string;
         try {
-          const { data, error } = await this.adminSupabase.auth.admin.createUser({
-            email,
+          const { error: pwError } = await this.adminSupabase.auth.admin.updateUserById(userId, {
             password: pending.password,
-            email_confirm: true,
             user_metadata: { name },
           });
-          if (error) throw error;
-          userId = data.user.id;
+          if (pwError) throw pwError;
+          this.logger.log(`[Auth] Password set for ${email}`);
         } catch (err: any) {
-          // If admin key is missing or user already exists, try to get existing user
-          this.logger.warn(`[Auth] admin.createUser failed (${err.message}), attempting to find existing user`);
-          const existing = await this.findUserByEmail(email);
-          if (existing) {
-            userId = existing.id;
-          } else {
-            // Generate a local userId as fallback
-            userId = crypto.randomUUID();
-            this.logger.warn(`[Auth] Using local userId ${userId} for ${email} (not in Supabase Auth)`);
-          }
+          this.logger.warn(`[Auth] Could not set password (non-blocking): ${err.message}`);
         }
-        await this.upsertUser(userId, email, name);
-        return { success: true, message: 'Email verified', userId, name };
-      } else {
-        // ─── Login: find existing user ──────────────────────────────────
-        // Check local DB first, then Supabase Auth
-        const localUser = await this.findLocalUserByEmail(email);
-        if (localUser) {
-          return { success: true, message: 'Email verified', userId: localUser.id, name: localUser.name };
-        }
-        // Try Supabase Auth
-        const authUser = await this.findUserByEmail(email);
-        if (authUser) {
-          const uid = authUser.id;
-          const uname = authUser.user_metadata?.name || email.split('@')[0];
-          await this.upsertUser(uid, email, uname);
-          return { success: true, message: 'Email verified', userId: uid, name: uname };
-        }
-        return { success: false, message: 'No account found with this email. Please sign up first.' };
       }
+
+      await this.upsertUser(userId, email, name);
+      return { success: true, message: 'Email verified', userId, name };
     } catch (err: any) {
       this.logger.error(`[Auth] verifyOtp failed: ${err.message}`);
       return { success: false, message: err.message };
-    }
-  }
-
-  private async findLocalUserByEmail(email: string): Promise<{ id: string; name: string } | null> {
-    try {
-      const { data, error } = await this.adminSupabase
-        .from('users')
-        .select('id, name')
-        .eq('email', email)
-        .maybeSingle();
-      if (error) throw error;
-      return data || null;
-    } catch {
-      return null;
-    }
-  }
-
-  private async findUserByEmail(email: string): Promise<{ id: string; user_metadata?: any } | null> {
-    try {
-      const result = await this.adminSupabase.auth.admin.listUsers();
-      if (result.error) throw result.error;
-      if (!result.data) throw new Error('No data returned');
-      const user = result.data.users.find((u: any) => u.email === email);
-      return user ? { id: user.id, user_metadata: user.user_metadata } : null;
-    } catch {
-      return null;
     }
   }
 
