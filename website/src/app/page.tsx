@@ -100,9 +100,13 @@ export default function Home() {
             </form>
           </div>
 
-          <p className="text-xs text-gray-500">
-            Trusted by 2,000+ sales &amp; GTM teams worldwide
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500">
+            <span>Free Trial</span>
+            <span className="text-white/20">·</span>
+            <span>Live in 5 minutes</span>
+            <span className="text-white/20">·</span>
+            <span>Cancel anytime</span>
+          </div>
         </div>
       </section>
 
