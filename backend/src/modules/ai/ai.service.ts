@@ -120,9 +120,29 @@ Return the response as a plain text string (the message only, no JSON).`;
       }
     }
 
+    let pitch = "automate outbound and book more meetings without scaling headcount";
+    if (companyDescription) {
+      const descLower = companyDescription.toLowerCase();
+      if (descLower.includes('payment') || descLower.includes('fintech') || descLower.includes('transaction') || descLower.includes('gateway') || descLower.includes('paynixa')) {
+        pitch = "simplify payment collection, reduce transaction failures, and integrate seamless payment gateways";
+      } else if (descLower.includes('recruit') || descLower.includes('hr') || descLower.includes('talent') || descLower.includes('hiring')) {
+        pitch = "source qualified tech talent, automate applicant screening, and build efficient hiring workflows";
+      } else if (descLower.includes('marketing') || descLower.includes('seo') || descLower.includes('ads') || descLower.includes('agency')) {
+        pitch = "maximize digital marketing ROI, capture high-quality leads, and rank higher on search engines";
+      } else if (descLower.includes('security') || descLower.includes('compliance') || descLower.includes('cyber')) {
+        pitch = "secure customer data, automate security compliance audits, and prevent network vulnerabilities";
+      } else {
+        const cleanDesc = companyDescription.replace(/^(we are|we provide|this is|a platform that)\s+/i, '');
+        const sentence = cleanDesc.split(/[.!?]/)[0] || '';
+        if (sentence.trim().length > 15 && sentence.trim().length < 150) {
+          pitch = sentence.trim().charAt(0).toLowerCase() + sentence.trim().slice(1);
+        }
+      }
+    }
+
     return {
       subject: `Quick question about ${company}'s ${role} strategy`,
-      body: `Hi ${leadName},\n\nNoticed ${company} has been ${triggers[0] || 'expanding recently'}.\n\nWe help ${role}s at companies like yours automate outbound and book more meetings without scaling headcount.\n\nWorth a 10-min chat to see if it's a fit?\n\nBest,\n[Your Name]`,
+      body: `Hi ${leadName},\n\nNoticed ${company} has been ${triggers[0] || 'expanding recently'}.\n\nWe help ${role}s at companies like yours ${pitch}.\n\nWorth a 10-min chat to see if it's a fit?\n\nBest,\n[Your Name]`,
     };
   }
 
