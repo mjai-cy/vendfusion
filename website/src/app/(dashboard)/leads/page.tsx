@@ -12,7 +12,7 @@ import {
 type LeadsTab = "inbox" | "lists";
 
 export default function LeadsPage() {
-  const { leads, enrichLead, sendOutreachAction, updateLeadStatus, scanReport, leadLists, createLeadList, deleteLeadList, generateAIMessage } = useAppState();
+  const { user, leads, enrichLead, sendOutreachAction, updateLeadStatus, scanReport, leadLists, createLeadList, deleteLeadList, generateAIMessage } = useAppState();
   const [tab, setTab] = useState<LeadsTab>("inbox");
   const [searchQuery, setSearchQuery] = useState("");
   const [enrichingIds, setEnrichingIds] = useState<Set<string>>(new Set());
@@ -78,7 +78,7 @@ export default function LeadsPage() {
       ...prev,
       [genId]: {
         emailSubject: emailResult.subject || "",
-        emailBody: emailResult.body || `Hi ${lead.name.split(" ")[0]},\n\nI noticed you're the ${lead.role} at ${lead.companyName}. We help companies automate outbound and book more meetings.\n\nWorth a 15-min chat?\n\nBest,\n[Your Name]`,
+        emailBody: (emailResult.body || `Hi ${lead.name.split(" ")[0]},\n\nI noticed you're the ${lead.role} at ${lead.companyName}. We help companies automate outbound and book more meetings.\n\nWorth a 15-min chat?\n\nBest,\n[Your Name]`).replace(/\[Your Name\]/g, user?.name || "Mritunjay Kumar"),
         linkedin: linkedinResult.message || `Hi ${lead.name.split(" ")[0]}, I saw your work at ${lead.companyName} — would love to connect!`,
       },
     }));
@@ -455,7 +455,7 @@ export default function LeadsPage() {
                     <div className="border-t border-white/5 pt-2 space-y-1">
                       <p className="text-[10px] font-bold text-gray-400">Body:</p>
                       <p className="text-xs text-gray-300 whitespace-pre-line leading-relaxed font-sans">
-                        {generatedMessages[`gen-${contactLead.id}`]?.emailBody || `Hi ${contactLead.name.split(" ")[0]},\n\nI noticed you're the ${contactLead.role} at ${contactLead.companyName}.\n\nWe help companies automate outbound and book more meetings.\n\nWorth a 15-min chat?\n\nBest,\n[Your Name]`}
+                        {generatedMessages[`gen-${contactLead.id}`]?.emailBody || `Hi ${contactLead.name.split(" ")[0]},\n\nI noticed you're the ${contactLead.role} at ${contactLead.companyName}.\n\nWe help companies automate outbound and book more meetings.\n\nWorth a 15-min chat?\n\nBest,\n${user?.name || "Mritunjay Kumar"}`}
                       </p>
                     </div>
                     <div className="flex gap-2 border-t border-white/5 pt-2">
