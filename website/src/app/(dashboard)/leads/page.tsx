@@ -89,6 +89,64 @@ export default function LeadsPage() {
     });
   };
 
+  const getEmailSubject = (lead: any) => {
+    const genId = `gen-${lead.id}`;
+    return generatedMessages[genId]?.emailSubject ?? `Quick question about ${lead.companyName}'s growth strategy`;
+  };
+
+  const getEmailBody = (lead: any) => {
+    const genId = `gen-${lead.id}`;
+    return generatedMessages[genId]?.emailBody ?? `Hi ${lead.name.split(" ")[0]},\n\nI noticed you're the ${lead.role} at ${lead.companyName}.\n\nWe help companies automate outbound and book more meetings.\n\nWorth a 15-min chat?\n\nBest,\n${user?.name || "Mritunjay Kumar"}`;
+  };
+
+  const getLinkedInMsg = (lead: any) => {
+    const genId = `gen-${lead.id}`;
+    return generatedMessages[genId]?.linkedin ?? `Hi ${lead.name.split(" ")[0]}, I saw your work at ${lead.companyName} — would love to connect!`;
+  };
+
+  const handleUpdateEmailSubject = (leadId: string, val: string) => {
+    const genId = `gen-${leadId}`;
+    setGeneratedMessages(prev => {
+      const current = prev[genId] || {};
+      return {
+        ...prev,
+        [genId]: {
+          ...current,
+          emailSubject: val,
+        }
+      };
+    });
+  };
+
+  const handleUpdateEmailBody = (leadId: string, val: string) => {
+    const genId = `gen-${leadId}`;
+    setGeneratedMessages(prev => {
+      const current = prev[genId] || {};
+      return {
+        ...prev,
+        [genId]: {
+          ...current,
+          emailBody: val,
+        }
+      };
+    });
+  };
+
+  const handleUpdateLinkedInMsg = (leadId: string, val: string) => {
+    const genId = `gen-${leadId}`;
+    setGeneratedMessages(prev => {
+      const current = prev[genId] || {};
+      return {
+        ...prev,
+        [genId]: {
+          ...current,
+          linkedin: val,
+        }
+      };
+    });
+  };
+
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="border-b border-white/5 pb-4 flex items-center justify-between">
@@ -448,20 +506,26 @@ export default function LeadsPage() {
                   <div className="rounded-xl border border-white/5 bg-black/40 p-4 space-y-3 relative group">
                     <div className="space-y-1">
                       <p className="text-[10px] font-bold text-gray-400">Subject:</p>
-                      <p className="text-xs text-white font-semibold">
-                        {generatedMessages[`gen-${contactLead.id}`]?.emailSubject || `Quick question about ${contactLead.companyName}'s growth strategy`}
-                      </p>
+                      <input
+                        type="text"
+                        value={getEmailSubject(contactLead)}
+                        onChange={(e) => handleUpdateEmailSubject(contactLead.id, e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-primary font-medium"
+                      />
                     </div>
                     <div className="border-t border-white/5 pt-2 space-y-1">
                       <p className="text-[10px] font-bold text-gray-400">Body:</p>
-                      <p className="text-xs text-gray-300 whitespace-pre-line leading-relaxed font-sans">
-                        {generatedMessages[`gen-${contactLead.id}`]?.emailBody || `Hi ${contactLead.name.split(" ")[0]},\n\nI noticed you're the ${contactLead.role} at ${contactLead.companyName}.\n\nWe help companies automate outbound and book more meetings.\n\nWorth a 15-min chat?\n\nBest,\n${user?.name || "Mritunjay Kumar"}`}
-                      </p>
+                      <textarea
+                        value={getEmailBody(contactLead)}
+                        onChange={(e) => handleUpdateEmailBody(contactLead.id, e.target.value)}
+                        rows={8}
+                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-primary font-sans leading-relaxed resize-y"
+                      />
                     </div>
                     <div className="flex gap-2 border-t border-white/5 pt-2">
                       <button 
                         onClick={() => {
-                          const body = generatedMessages[`gen-${contactLead.id}`]?.emailBody || "";
+                          const body = getEmailBody(contactLead);
                           navigator.clipboard.writeText(body);
                           alert("Email body copied to clipboard!");
                         }}
@@ -499,13 +563,16 @@ export default function LeadsPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-white/5 bg-black/40 p-4 space-y-3">
-                    <p className="text-xs text-gray-300 leading-relaxed font-sans">
-                      {generatedMessages[`gen-${contactLead.id}`]?.linkedin || `Hi ${contactLead.name.split(" ")[0]}, I saw your work at ${contactLead.companyName} — would love to connect!`}
-                    </p>
+                    <textarea
+                      value={getLinkedInMsg(contactLead)}
+                      onChange={(e) => handleUpdateLinkedInMsg(contactLead.id, e.target.value)}
+                      rows={3}
+                      className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-primary font-sans leading-relaxed resize-y"
+                    />
                     <div className="flex gap-2 border-t border-white/5 pt-2">
                       <button 
                         onClick={() => {
-                          const liMsg = generatedMessages[`gen-${contactLead.id}`]?.linkedin || "";
+                          const liMsg = getLinkedInMsg(contactLead);
                           navigator.clipboard.writeText(liMsg);
                           alert("LinkedIn message copied to clipboard!");
                         }}
