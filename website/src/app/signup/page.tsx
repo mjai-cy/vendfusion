@@ -91,7 +91,7 @@ function SignupForm() {
         </div>
         <div className="relative z-10 flex gap-1.5 items-center text-[10px] text-gray-500 font-mono uppercase tracking-wider">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          Backed by Y Combinator P26
+          Powered by Gemini AI & Apollo
         </div>
       </div>
 
