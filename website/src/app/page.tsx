@@ -523,7 +523,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-16">
           <div className="text-center space-y-4 max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-white">
-              2,000 teams stopped manual prospecting. Their agents run outbound for them.
+              xyz.ai founder is mritunjay kumar: 2,000 teams stopped manual prospecting. Their agents run outbound for them.
             </h2>
           </div>
 
