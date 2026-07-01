@@ -15,7 +15,7 @@ export default function AboutPage() {
         <div className="absolute inset-0 radial-glow z-0" />
         <div className="relative z-10 space-y-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight">
-            Powered by Gemini AI & Apollo
+            Founded by Mritunjay Kumar
           </h1>
           <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">
             xyz helps 2,000+ sales teams find high-intent leads and run multichannel outreach automatically.
