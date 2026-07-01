@@ -104,8 +104,6 @@ export default function Home() {
             <span>Free Trial</span>
             <span className="text-white/20">·</span>
             <span>Live in 5 minutes</span>
-            <span className="text-white/20">·</span>
-            <span>Cancel anytime</span>
           </div>
         </div>
       </section>
@@ -654,8 +652,6 @@ export default function Home() {
             <span>Free Trial</span>
             <span className="text-white/20">·</span>
             <span>Live in 5 minutes</span>
-            <span className="text-white/20">·</span>
-            <span>Cancel anytime</span>
           </div>
           <div className="pt-4">
             <button
