@@ -26,6 +26,18 @@ export default function AgentDashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       
+      {scanReport?.isDemoSandbox && (
+        <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-xs text-yellow-400 flex items-start gap-2.5 animate-fade-in">
+          <span className="text-base leading-none">⚠️</span>
+          <div>
+            <p className="font-bold">Notice: API limit reached (using Sandbox/Demo Mode)</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              The live B2B database search or AI limits have been reached. To ensure the scanner remains testable, the platform is displaying verified B2B templates and mock signals.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Agent Status Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4 gap-4">
         <div className="flex items-center gap-3">

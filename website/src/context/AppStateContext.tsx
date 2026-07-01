@@ -20,6 +20,7 @@ export interface ScanReport {
   topCompetitors: { name: string; website: string; marketShare: string }[];
   basicRecommendations: string[];
   aiReadinessScore: number;
+  isDemoSandbox?: boolean;
 }
 
 export interface Lead {

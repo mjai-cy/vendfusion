@@ -20,6 +20,7 @@ export interface ScanReport {
   basicRecommendations: string[];
   aiReadinessScore: number;
   personas?: PersonaResult[];
+  isDemoSandbox?: boolean;
 }
 
 export interface PersonaResult {
@@ -96,6 +97,7 @@ export class ScanService {
 
     // 2. Ask Gemini to analyze it
     let report: ScanReport;
+    let isDemoSandbox = false;
     try {
       const prompt = `You are an expert B2B sales intelligence analyst. Analyze this company website and return a JSON object with NO markdown, NO code blocks, just raw JSON.
 
@@ -160,6 +162,7 @@ Return this exact JSON structure:
       this.logger.log(`[Scan] Gemini analysis complete for ${domain}: ${report.companyName}`);
     } catch (err: any) {
       this.logger.error(`[Scan] Gemini analysis failed: ${err.message}. Falling back to rule-based B2B analysis.`);
+      isDemoSandbox = true;
       
       const fallbackCompanyName = domain.split('.')[0].toUpperCase();
       report = {
@@ -187,9 +190,10 @@ Return this exact JSON structure:
     }
 
     // 3. Get real leads from Apollo
-    const leads = await this.fetchRealLeads(report);
+    const apolloRes = await this.fetchRealLeads(report);
+    const finalSandbox = isDemoSandbox || apolloRes.isDemoSandbox;
 
-    return { ...report, leads };
+    return { ...report, leads: apolloRes.leads, isDemoSandbox: finalSandbox };
   }
 
   // ─── Free Persona Tool ────────────────────────────────────────────────────
@@ -227,8 +231,7 @@ Return ONLY raw JSON array (no markdown):
     }
   }
 
-  // ─── Fetch real leads from Apollo ────────────────────────────────────────
-  private async fetchRealLeads(report: ScanReport): Promise<any[]> {
+  private async fetchRealLeads(report: ScanReport): Promise<{ leads: any[]; isDemoSandbox: boolean }> {
     this.logger.log(`[Scan] Querying Apollo for real leads matching ${report.companyName}`);
     try {
       const searchRes = await this.apolloService.searchLeads({
@@ -239,25 +242,28 @@ Return ONLY raw JSON array (no markdown):
 
       if (searchRes?.leads?.length) {
         this.logger.log(`[Scan] Apollo returned ${searchRes.leads.length} real leads`);
-        return searchRes.leads.map((p, i) => ({
-          id: p.id || `lead-${Date.now()}-${i}`,
-          name: p.name,
-          role: p.title,
-          companyName: p.company,
-          domain: p.company_domain || '',
-          intentScore: p.intent_score || Math.floor(Math.random() * 20) + 75,
-          intentSignals: [
-            'Competitor post interaction',
-            'Recent funding round',
-            'Active in target LinkedIn groups',
-            'Job change signal',
-          ],
-          email: p.email || `${p.name.toLowerCase().replace(/\s+/g, '.')}@${p.company_domain || 'domain.com'}`,
-          phone: `+1-555-${Math.floor(1000 + Math.random() * 9000)}`,
-          linkedinUrl: p.linkedin_url || 'https://linkedin.com',
-          outreachStatus: 'new',
-          enrichmentStatus: 'enriched',
-        }));
+        return {
+          leads: searchRes.leads.map((p, i) => ({
+            id: p.id || `lead-${Date.now()}-${i}`,
+            name: p.name,
+            role: p.title,
+            companyName: p.company,
+            domain: p.company_domain || '',
+            intentScore: p.intent_score || Math.floor(Math.random() * 20) + 75,
+            intentSignals: [
+              'Competitor post interaction',
+              'Recent funding round',
+              'Active in target LinkedIn groups',
+              'Job change signal',
+            ],
+            email: p.email || `${p.name.toLowerCase().replace(/\s+/g, '.')}@${p.company_domain || 'domain.com'}`,
+            phone: `+1-555-${Math.floor(1000 + Math.random() * 9000)}`,
+            linkedinUrl: p.linkedin_url || 'https://linkedin.com',
+            outreachStatus: 'new',
+            enrichmentStatus: 'enriched',
+          })),
+          isDemoSandbox: false
+        };
       }
     } catch (err: any) {
       this.logger.warn(`[Scan] Apollo search failed: ${err.message}. Falling back to mock B2B leads.`);
@@ -271,31 +277,34 @@ Return ONLY raw JSON array (no markdown):
       'Rohan Gupta', 'Ananya Nair', 'Vikram Singh', 'Divya Rao'
     ];
 
-    return Array.from({ length: 8 }, (_, i) => {
-      const name = mockNames[i % mockNames.length];
-      const companyName = mockCompanies[i % mockCompanies.length];
-      const compDomain = `${companyName.toLowerCase().replace(/\s+/g, '')}.com`;
-      const role = fallbackTargetRoles[i % fallbackTargetRoles.length];
-      return {
-        id: `lead-mock-${Date.now()}-${i}`,
-        name,
-        role,
-        companyName,
-        domain: compDomain,
-        intentScore: Math.floor(Math.random() * 15) + 82, // 82 - 97
-        intentSignals: [
-          'High web traffic trigger',
-          'Competitor website visitor',
-          'Searching for sales automation tools',
-          'Recently expanded sales team'
-        ],
-        email: `${name.toLowerCase().replace(/\s+/g, '.')}@${compDomain}`,
-        phone: `+91-98${Math.floor(10000000 + Math.random() * 90000000)}`,
-        linkedinUrl: `https://linkedin.com/in/${name.toLowerCase().replace(/\s+/g, '-')}`,
-        outreachStatus: 'new',
-        enrichmentStatus: 'enriched'
-      };
-    });
+    return {
+      leads: Array.from({ length: 8 }, (_, i) => {
+        const name = mockNames[i % mockNames.length];
+        const companyName = mockCompanies[i % mockCompanies.length];
+        const compDomain = `${companyName.toLowerCase().replace(/\s+/g, '')}.com`;
+        const role = fallbackTargetRoles[i % fallbackTargetRoles.length];
+        return {
+          id: `lead-mock-${Date.now()}-${i}`,
+          name,
+          role,
+          companyName,
+          domain: compDomain,
+          intentScore: Math.floor(Math.random() * 15) + 82, // 82 - 97
+          intentSignals: [
+            'High web traffic trigger',
+            'Competitor website visitor',
+            'Searching for sales automation tools',
+            'Recently expanded sales team'
+          ],
+          email: `${name.toLowerCase().replace(/\s+/g, '.')}@${compDomain}`,
+          phone: `+91-98${Math.floor(10000000 + Math.random() * 90000000)}`,
+          linkedinUrl: `https://linkedin.com/in/${name.toLowerCase().replace(/\s+/g, '-')}`,
+          outreachStatus: 'new',
+          enrichmentStatus: 'enriched'
+        };
+      }),
+      isDemoSandbox: true
+    };
   }
 
   // ─── Fallback personas (only used when Gemini is unavailable) ──────────
