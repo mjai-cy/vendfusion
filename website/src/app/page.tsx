@@ -518,57 +518,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 md:py-28 border-t border-white/5">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-white">
-              xyz.ai founder is mritunjay kumar: 2,000 teams stopped manual prospecting. Their agents run outbound for them.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-white/5 bg-dark-bg p-6 glass-panel flex flex-col justify-between">
-              <p className="text-gray-300 text-sm italic leading-relaxed">
-                "We're booking 15+ demos per week with xyz AI. It helped us close key accounts like Decathlon, Allianz, AXA."
-              </p>
-              <div className="mt-6 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-primary">LD</div>
-                <div>
-                  <h5 className="text-xs font-bold text-white">Louis Debusschere</h5>
-                  <p className="text-[10px] text-gray-500">Founder @ Wipra (AI Company)</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/5 bg-dark-bg p-6 glass-panel flex flex-col justify-between">
-              <p className="text-gray-300 text-sm italic leading-relaxed">
-                "We made our money back 6x already, and our week is now fully booked with leads our agent found for us."
-              </p>
-              <div className="mt-6 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-secondary/20 border border-secondary/30 flex items-center justify-center font-bold text-secondary">SB</div>
-                <div>
-                  <h5 className="text-xs font-bold text-white">Stuart Brent</h5>
-                  <p className="text-[10px] text-gray-500">Founder at SaasyDB (B2B SaaS)</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/5 bg-dark-bg p-6 glass-panel flex flex-col justify-between">
-              <p className="text-gray-300 text-sm italic leading-relaxed">
-                "We booked 5 demos from just 30 leads found by our AI Agent. xyz gave us direct founders' contact info."
-              </p>
-              <div className="mt-6 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center font-bold text-accent">AP</div>
-                <div>
-                  <h5 className="text-xs font-bold text-white">Alessandro Paladin</h5>
-                  <p className="text-[10px] text-gray-500">Co-Founder at KubaLabs (B2B SaaS)</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Integrations */}
       <section className="py-16 bg-black/20 border-y border-white/5">
