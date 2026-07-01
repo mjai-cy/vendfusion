@@ -14,7 +14,7 @@ function OnboardingContent() {
   const searchParams = useSearchParams();
   const { 
     runWebsiteScan, scanningInProgress, scanReport,
-    updateWorkspaceName, isLoggedIn, plan
+    updateWorkspaceName, isLoggedIn, plan, workspaces
   } = useAppState();
 
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -31,10 +31,8 @@ function OnboardingContent() {
   useEffect(() => {
     if (!isLoggedIn) {
       router.push("/login");
-    } else if (plan !== "pro") {
-      router.push("/pricing");
     }
-  }, [isLoggedIn, plan, router]);
+  }, [isLoggedIn, router]);
 
   const runScan = async (cleanUrl: string) => {
     setScanError("");
@@ -77,55 +75,84 @@ function OnboardingContent() {
       <main className="flex-grow flex items-center justify-center px-4 mt-12">
         <div className="w-full max-w-md rounded-2xl border border-white/5 bg-dark-bg/60 p-8 glass-panel shadow-2xl space-y-6">
 
-          {!completed && !scanReport && (
-            <div className="space-y-6">
-              <div className="space-y-2 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary">
-                  <Globe className="h-6 w-6" />
-                </div>
-                <h2 className="text-xl font-bold text-white">Launch your AI agent</h2>
+          {workspaces.length >= 1 && plan !== "pro" ? (
+            <div className="space-y-6 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-500">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-white">Scan Limit Reached</h2>
                 <p className="text-xs text-gray-400">
-                  Enter your website. We'll analyze your business and configure your agent.
+                  You can only have 1 active website scan on your current free plan. 
+                  Please upgrade to a Pro plan to add and scan multiple websites.
                 </p>
               </div>
-
-              {!scanningInProgress ? (
-                <form onSubmit={handleStart} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Your Website</label>
-                    <input
-                      type="text"
-                      placeholder="https://company.com"
-                      required
-                      value={websiteUrl}
-                      onChange={(e) => setWebsiteUrl(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white focus:outline-none focus:border-primary transition-colors"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full h-11 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg transition-all gap-2"
-                  >
-                    Launch my agent
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                  {scanError && (
-                    <div className="flex items-start gap-2 p-3 rounded-lg border border-red-500/20 bg-red-500/5">
-                      <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-                      <p className="text-xs text-red-300">{scanError}</p>
-                    </div>
-                  )}
-                </form>
-              ) : (
-                <div className="space-y-4 py-4 text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <RefreshCw className="h-5 w-5 text-primary animate-spin" />
-                    <span className="text-xs text-gray-400 font-medium">Analyzing your website...</span>
-                  </div>
-                  <p className="text-xs text-gray-400 font-mono">Scanning your business, finding leads, and configuring your AI agent</p>
-                </div>
-              )}
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  onClick={() => router.push("/pricing")}
+                  className="w-full h-11 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg transition-all"
+                >
+                  Upgrade to Pro
+                </button>
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="w-full h-11 inline-flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold text-white transition-all"
+                >
+                  Back to Dashboard
+                </button>
+              </div>
             </div>
+          ) : (
+            !completed && !scanReport && (
+              <div className="space-y-6">
+                <div className="space-y-2 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary">
+                    <Globe className="h-6 w-6" />
+                  </div>
+                  <h2 className="text-xl font-bold text-white">Launch your AI agent</h2>
+                  <p className="text-xs text-gray-400">
+                    Enter your website. We'll analyze your business and configure your agent.
+                  </p>
+                </div>
+
+                {!scanningInProgress ? (
+                  <form onSubmit={handleStart} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Your Website</label>
+                      <input
+                        type="text"
+                        placeholder="https://company.com"
+                        required
+                        value={websiteUrl}
+                        onChange={(e) => setWebsiteUrl(e.target.value)}
+                        className="w-full h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white focus:outline-none focus:border-primary transition-colors"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full h-11 inline-flex items-center justify-center rounded-lg bg-primary hover:bg-primary-hover text-sm font-semibold text-white shadow-lg transition-all gap-2"
+                    >
+                      Launch my agent
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                    {scanError && (
+                      <div className="flex items-start gap-2 p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+                        <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-red-300">{scanError}</p>
+                      </div>
+                    )}
+                  </form>
+                ) : (
+                  <div className="space-y-4 py-4 text-center">
+                    <div className="flex items-center justify-center gap-3">
+                      <RefreshCw className="h-5 w-5 text-primary animate-spin" />
+                      <span className="text-xs text-gray-400 font-medium">Analyzing your website...</span>
+                    </div>
+                    <p className="text-xs text-gray-400 font-mono">Scanning your business, finding leads, and configuring your AI agent</p>
+                  </div>
+                )}
+              </div>
+            )
           )}
 
           {completed && (
