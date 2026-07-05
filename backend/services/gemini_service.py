@@ -1,6 +1,7 @@
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
+import json
 
 load_dotenv()
 
@@ -87,119 +88,63 @@ NOTES: [personalization notes]"""
 
 
 def generate_company_analysis(url_or_name: str) -> dict:
-    """Analyze a company using Gemini AI based on URL or name"""
+    """Analyze a company by scraping its website for real data"""
 
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "demo-key":
-        return {
-            "company_name": url_or_name.split("/")[-1].replace(".com", "").replace(".in", "").replace(".io", "").title(),
-            "industry": "Technology",
-            "description": f"{url_or_name} is a company that could benefit from AI-powered outbound sales automation.",
-            "company_size": "10-50",
-            "location": "Global",
-            "pain_points": ["Manual outreach is time-consuming", "Low email reply rates", "Difficulty scaling sales"],
-            "suggested_approach": "Lead with AI automation benefits and time savings. Focus on how VendFusion can help them scale outreach."
-        }
+    from services.scanner_service import scrape_company_website
+    scraped = scrape_company_website(url_or_name)
 
-    try:
-        prompt = f"""Analyze the company: {url_or_name}
+    if GEMINI_API_KEY and GEMINI_API_KEY != "demo-key":
+        try:
+            context = f"Company: {scraped['company_name']}\nWebsite: {scraped['website']}\nDescription: {scraped['description']}\nTech stack: {', '.join(scraped['tech_stack'])}\nTeam page: {scraped['team_url']}"
+            prompt = f"""Based on this real company data, provide a brief sales analysis:
 
-Provide a JSON response with these fields (no markdown, just plain JSON):
+{context}
+
+Return JSON:
 {{
-    "company_name": "Company Name",
-    "industry": "Industry sector",
-    "description": "2-3 sentence description of what this company does and who they serve",
-    "company_size": "Estimated company size (e.g. 1-10, 10-50, 50-200, 200+)",
-    "location": "Primary location",
-    "pain_points": ["pain point 1", "pain point 2", "pain point 3"],
-    "suggested_approach": "1-2 sentence suggestion for approaching this company with an outbound sales pitch"
+    "suggested_approach": "1-2 sentence outbound sales pitch suggestion based on their actual tech stack and business",
+    "pain_points": ["pain point 1", "pain point 2", "pain point 3"]
 }}
 
-Only return the JSON, nothing else."""
+Only return valid JSON, nothing else."""
 
-        model = genai.GenerativeModel('gemini-2.0-flash')
-        response = model.generate_content(prompt)
-        content = response.text.strip()
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            response = model.generate_content(prompt)
+            content = response.text.strip()
+            if content.startswith("```"):
+                content = content.split("```")[1]
+                if content.startswith("json"):
+                    content = content[4:]
+            ai_data = json.loads(content)
+            scraped["suggested_approach"] = ai_data.get("suggested_approach", scraped["suggested_approach"])
+            scraped["pain_points"] = ai_data.get("pain_points", scraped["pain_points"])
+        except Exception:
+            pass
 
-        if content.startswith("```"):
-            content = content.split("```")[1]
-            if content.startswith("json"):
-                content = content[4:]
-
-        import json
-        result = json.loads(content)
-        return result
-
-    except Exception as e:
-        return {
-            "company_name": url_or_name.split("/")[-1].replace(".com", "").replace(".in", "").replace(".io", "").title(),
-            "industry": "Technology",
-            "description": f"Analysis for {url_or_name}. The company appears to be in the technology sector.",
-            "company_size": "Unknown",
-            "location": "Unknown",
-            "pain_points": ["Could benefit from automated outreach", "May struggle with lead generation", "Scaling sales processes"],
-            "suggested_approach": f"Research {url_or_name} further before reaching out. Focus on their specific pain points."
-        }
+    return {
+        "company_name": scraped["company_name"],
+        "industry": scraped.get("industry", "Technology"),
+        "description": scraped["description"],
+        "company_size": scraped.get("company_size", "Unknown"),
+        "location": scraped.get("location", "Unknown"),
+        "website": scraped.get("website", ""),
+        "tech_stack": scraped.get("tech_stack", []),
+        "pain_points": scraped.get("pain_points", []),
+        "suggested_approach": scraped.get("suggested_approach", ""),
+        "founder_name": scraped.get("founder_name", ""),
+        "founder_email": scraped.get("founder_email", ""),
+        "linkedin": scraped.get("linkedin", ""),
+        "team_url": scraped.get("team_url", ""),
+        "emails_found": scraped.get("emails_found", []),
+    }
 
 
 def find_people_at_company(company_name: str, roles: str = None) -> dict:
-    """Find key contacts at a company using Gemini AI"""
+    """Find real contacts at a company using HubSpot CRM + web scraping"""
 
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "demo-key":
-        return {
-            "company": company_name,
-            "contacts": [
-                {
-                    "name": "Sample Contact",
-                    "title": "Head of Sales",
-                    "email": f"sales@{company_name.lower().replace(' ', '')}.com",
-                    "linkedin": f"https://linkedin.com/in/sample",
-                    "relevance": "High - decision maker for sales tools",
-                }
-            ],
-            "note": "Add your Gemini API key for AI-powered people discovery"
-        }
-
-    try:
-        role_filter = f" Focus on these roles: {roles}" if roles else ""
-
-        prompt = f"""Find key decision makers and contacts at the company: {company_name}.{role_filter}
-
-Return a JSON response with:
-{{
-    "company": "{company_name}",
-    "contacts": [
-        {{
-            "name": "Full Name",
-            "title": "Job Title",
-            "email": "likely email format",
-            "linkedin": "linkedin profile url if known",
-            "relevance": "Why this person is a good contact"
-        }}
-    ],
-    "note": "Brief note about the company's decision-making structure"
-}}
-
-Return 3-5 key contacts. Only return valid JSON, nothing else."""
-
-        model = genai.GenerativeModel('gemini-2.0-flash')
-        response = model.generate_content(prompt)
-        content = response.text.strip()
-
-        if content.startswith("```"):
-            content = content.split("```")[1]
-            if content.startswith("json"):
-                content = content[4:]
-
-        import json
-        result = json.loads(content)
-        return result
-
-    except Exception as e:
-        return {
-            "company": company_name,
-            "contacts": [],
-            "note": f"Gemini API quota exceeded. Try again later or add more API quota."
-        }
+    from services.scanner_service import find_people_from_web_and_crm
+    result = find_people_from_web_and_crm(company_name, roles)
+    return result
 
 
 def _generate_template(

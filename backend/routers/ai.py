@@ -19,8 +19,15 @@ class CompanyAnalysisResponse(BaseModel):
     description: str = ""
     company_size: str = ""
     location: str = ""
+    website: str = ""
+    tech_stack: list[str] = []
     pain_points: list[str] = []
     suggested_approach: str = ""
+    founder_name: str = ""
+    founder_email: str = ""
+    linkedin: str = ""
+    team_url: str = ""
+    emails_found: list[str] = []
 
 
 class PeopleFinderRequest(BaseModel):
@@ -31,7 +38,9 @@ class PeopleFinderContact(BaseModel):
     name: str = ""
     title: str = ""
     email: str = ""
+    phone: str = ""
     linkedin: str = ""
+    source: str = ""
     relevance: str = ""
 
 class PeopleFinderResponse(BaseModel):
