@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VendFusion - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { teal: '#14b8a6', dark: '#0f172a', muted: '#64748b', light: '#f1f5f9' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #475569; transition: all 0.15s; text-decoration: none; }
+    .sidebar-item:hover { background: #f1f5f9; color: #0f172a; }
+    .sidebar-item.active { background: #14b8a6; color: white; }
+    .sidebar-item.active svg { stroke: white; }
+    .sidebar-item svg { width: 18px; height: 18px; stroke: #64748b; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+    .sidebar-sub { padding-left: 42px; }
+    .sidebar-sub .sidebar-item { padding: 6px 14px; font-size: 13px; }
+    .sidebar-section-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; padding: 16px 14px 6px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .stat-card { background: white; border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
+    .stat-card .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .kanban-col { background: white; border-radius: 12px; min-width: 220px; flex: 1; }
+    .pulse-card { background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); border: 1px solid #ccfbf1; border-radius: 12px; padding: 20px; }
+    .teal-btn { background: #14b8a6; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .teal-btn:hover { background: #0d9488; }
+    .outline-btn { background: white; color: #334155; border: 1px solid #e2e8f0; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .outline-btn:hover { background: #f8fafc; }
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 12px; font-weight: 600; color: #64748b; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
+    tr:hover td { background: #f8fafc; }
+    .setup-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 10px; }
+    .breadcrumb { font-size: 13px; color: #64748b; }
+    .breadcrumb a { color: #14b8a6; text-decoration: none; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+    .tab-active { border-bottom: 2px solid #14b8a6; color: #0f172a; font-weight: 600; }
+    .dropdown { position: relative; }
+    .notif-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; position: absolute; top: -2px; right: -2px; }
+  </style>
+</head>
+<body>
+  <div style="display:flex; height:100vh; overflow:hidden;">
+    <!-- ===== SIDEBAR ===== -->
+    <aside id="sidebar" style="width:240px; background:white; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0; transition: width 0.2s;">
+      <!-- Logo -->
+      <div style="padding:16px 18px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #f1f5f9;">
+        <div style="width:32px; height:32px; background:#14b8a6; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <span style="font-size:16px; font-weight:700; color:#0f172a;"><span style="color:#94a3b8">VEND</span>FUSION</span>
+      </div>
+
+      <!-- Nav -->
+      <nav style="flex:1; padding:8px 10px;">
+        <div onclick="appNav('dashboard')" class="sidebar-item active" data-page="dashboard">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </div>
+        <div onclick="appNav('ideal-customer')" class="sidebar-item" data-page="ideal-customer">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          Ideal Customer
+        </div>
+        <div onclick="appNav('lists')" class="sidebar-item" data-page="lists">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Lists
+        </div>
+        <div onclick="appNav('ai-workflow')" class="sidebar-item" data-page="ai-workflow">
+          <svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="3"/><circle cx="12" cy="6" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="5" cy="18" r="3"/><circle cx="12" cy="18" r="3"/><circle cx="19" cy="18" r="3"/><line x1="5" y1="9" x2="5" y2="15"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="19" y1="9" x2="19" y2="15"/></svg>
+          AI Workflow
+        </div>
+
+        <div class="sidebar-section-label">Finder</div>
+        <div onclick="toggleSub('finder-sub', this)" class="sidebar-item" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:10px;">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Finder
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="finder-sub" class="sidebar-sub" style="display:none;">
+          <div onclick="appNav('finder-company')" class="sidebar-item" data-page="finder-company">Company</div>
+          <div onclick="appNav('finder-people')" class="sidebar-item" data-page="finder-people">People</div>
+        </div>
+
+        <div onclick="appNav('email-accounts')" class="sidebar-item" data-page="email-accounts">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Email Accounts
+        </div>
+        <div onclick="appNav('campaigns')" class="sidebar-item" data-page="campaigns">
+          <svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          Campaigns
+        </div>
+        <div onclick="toggleSub('unibox-sub', this)" class="sidebar-item" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:10px;">
+            <svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+            Unibox
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="unibox-sub" class="sidebar-sub" style="display:none;">
+          <div onclick="appNav('unibox-inbox')" class="sidebar-item" data-page="unibox-inbox">Inbox</div>
+          <div onclick="appNav('unibox-reply')" class="sidebar-item" data-page="unibox-reply">Reply AI</div>
+        </div>
+
+        <div onclick="appNav('linkedin')" class="sidebar-item" data-page="linkedin">
+          <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          LinkedIn Automation
+        </div>
+
+        <div class="sidebar-section-label">CRM</div>
+        <div onclick="toggleSub('crm-sub', this)" class="sidebar-item" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:10px;">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            CRM
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="crm-sub" class="sidebar-sub" style="display:none;">
+          <div onclick="appNav('crm-accounts')" class="sidebar-item" data-page="crm-accounts">Account</div>
+          <div onclick="appNav('crm-contacts')" class="sidebar-item" data-page="crm-contacts">Contact</div>
+          <div onclick="appNav('crm-opportunity')" class="sidebar-item" data-page="crm-opportunity">Opportunity</div>
+          <div onclick="appNav('crm-tasks')" class="sidebar-item" data-page="crm-tasks">Tasks</div>
+        </div>
+
+        <div class="sidebar-section-label">Analytics</div>
+        <div onclick="toggleSub('reports-sub', this)" class="sidebar-item" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:10px;">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Report & Analytics
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="reports-sub" class="sidebar-sub" style="display:none;">
+          <div onclick="appNav('reports-crm')" class="sidebar-item" data-page="reports-crm">CRM</div>
+          <div onclick="appNav('reports-campaigns')" class="sidebar-item" data-page="reports-campaigns">Campaign</div>
+        </div>
+      </nav>
+
+      <!-- Bottom Nav -->
+      <div style="padding:10px; border-top:1px solid #f1f5f9;">
+        <div onclick="appNav('setup-guide')" class="sidebar-item" data-page="setup-guide">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Setup Guide
+        </div>
+        <div onclick="appNav('settings')" class="sidebar-item" data-page="settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Settings
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          Integrations
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN AREA ===== -->
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+      <!-- Top Bar -->
+      <header style="height:56px; background:white; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; padding:0 24px; flex-shrink:0;">
+        <div id="breadcrumb" class="breadcrumb"><a href="#" onclick="appNav('dashboard')">Dashboard</a></div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="position:relative; cursor:pointer;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <div class="notif-dot"></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="toggleProfileMenu()">
+            <div style="width:32px; height:32px; background:#14b8a6; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:700;" id="user-avatar">U</div>
+            <div>
+              <div style="font-size:13px; font-weight:600; color:#0f172a;" id="topbar-name">User</div>
+              <div style="font-size:11px; color:#94a3b8;">My Organization</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <main style="flex:1; overflow-y:auto; padding:24px;">
+        <!-- ====== DASHBOARD PAGE ====== -->
+        <div id="page-dashboard" class="page active">
+          <h1 style="font-size:26px; font-weight:700; color:#0f172a;" id="greeting">Good morning.</h1>
+          <p style="color:#64748b; margin:4px 0 20px; font-size:14px;" id="greeting-sub">Welcome to VendFusion</p>
+
+          <!-- Pulse Card -->
+          <div class="pulse-card" style="margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:14px;">🤖</span>
+              <span style="font-size:11px; font-weight:600; color:#0d9488; text-transform:uppercase; letter-spacing:0.5px;">VendFusion Pulse</span>
+              <span style="font-size:11px; color:#64748b;">YOUR DAILY BRIEF</span>
+            </div>
+            <p style="font-size:16px; font-weight:600; color:#0f172a; margin-bottom:8px;">Get started by connecting your email and launching your first campaign.</p>
+            <p style="font-size:14px; color:#64748b;">Once that's live, define your ICP so we can score lead fit and personalize outreach automatically.</p>
+          </div>
+
+          <!-- Setup Checklist -->
+          <div style="background:white; border-radius:12px; padding:20px; margin-bottom:24px;">
+            <h3 style="font-size:13px; font-weight:700; color:#14b8a6; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:14px;">Finish Setup to Start Selling</h3>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <div class="setup-item" style="flex:1; min-width:200px; cursor:pointer;" onclick="appNav('email-accounts')">
+                <span style="font-size:20px;">📧</span>
+                <div>
+                  <div style="font-size:14px; font-weight:600;">Connect your email</div>
+                  <div style="font-size:12px; color:#94a3b8;">Required to send</div>
+                </div>
+                <span style="margin-left:auto; color:#14b8a6; font-size:20px;">→</span>
+              </div>
+              <div class="setup-item" style="flex:1; min-width:200px; cursor:pointer;" onclick="appNav('campaigns')">
+                <span style="font-size:20px;">🚀</span>
+                <div>
+                  <div style="font-size:14px; font-weight:600;">Launch your first campaign</div>
+                  <div style="font-size:12px; color:#94a3b8;">Start outreach</div>
+                </div>
+                <span style="margin-left:auto; color:#14b8a6; font-size:20px;">→</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seed Demo Data -->
+          <div id="seed-demo-banner" style="background:linear-gradient(135deg,#f0fdfa,#ccfbf1); border:1px solid #99f6e4; border-radius:12px; padding:16px 20px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <p style="font-size:14px; font-weight:600; color:#0f172a;">New here? Load demo data</p>
+              <p style="font-size:13px; color:#64748b;">Populate dashboard with sample leads, campaigns, and mailboxes.</p>
+            </div>
+            <button onclick="seedDemoData()" style="background:#14b8a6; color:white; border:none; border-radius:10px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;">Load Demo Data</button>
+          </div>
+
+          <!-- Stats Row: Outreach Results -->
+          <h3 style="font-size:15px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">📬 Outreach Results</h3>
+          <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:24px;">
+            <div class="stat-card">
+              <div class="icon" style="background:#fef2f2; color:#ef4444;">💬</div>
+              <div><div style="font-size:22px; font-weight:700;" id="stat-replies">0</div><div style="font-size:12px; color:#64748b;">Replies</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#fff7ed; color:#f97316;">🔥</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Interested</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#eff6ff; color:#3b82f6;">✉️</div>
+              <div><div style="font-size:22px; font-weight:700;" id="stat-sent">0</div><div style="font-size:12px; color:#64748b;">Emails delivered</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#f0fdf4; color:#22c55e;">🔗</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">LinkedIn connected</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#faf5ff; color:#a855f7;">🚀</div>
+              <div><div style="font-size:22px; font-weight:700;" id="stat-campaigns">0</div><div style="font-size:12px; color:#64748b;">Campaigns</div></div>
+            </div>
+          </div>
+
+          <!-- Stats Row: Sourcing & Automation -->
+          <h3 style="font-size:15px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">⚡ Sourcing & Automation</h3>
+          <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:12px; margin-bottom:24px;">
+            <div class="stat-card">
+              <div class="icon" style="background:#f5f3ff; color:#8b5cf6;">⚙️</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Workflows</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#fefce8; color:#eab308;">📋</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Jobs Analyzed</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#ecfdf5; color:#10b981;">📑</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Target Lists</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#eff6ff; color:#3b82f6;">🏢</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Companies</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#fef2f2; color:#ef4444;">👤</div>
+              <div><div style="font-size:22px; font-weight:700;" id="stat-leads">0</div><div style="font-size:12px; color:#64748b;">Leads</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#f0fdf4; color:#22c55e;">📧</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">With Email</div></div>
+            </div>
+          </div>
+
+          <!-- Stats Row: CRM & Pipeline -->
+          <h3 style="font-size:15px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">🔄 CRM & Pipeline</h3>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:24px;">
+            <div class="stat-card">
+              <div class="icon" style="background:#fefce8; color:#eab308;">🏢</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Accounts</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#eff6ff; color:#3b82f6;">👤</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Contacts</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#fef2f2; color:#ef4444;">💰</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Opportunities</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="icon" style="background:#f0fdf4; color:#22c55e;">✅</div>
+              <div><div style="font-size:22px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Tasks</div></div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+            <div style="background:white; border-radius:12px; padding:20px;">
+              <h3 style="font-size:15px; font-weight:600; margin-bottom:16px;">Sales Pipeline Inputs</h3>
+              <div style="height:200px; border:1px dashed #e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:14px;">No data yet. Add leads to see chart.</div>
+            </div>
+            <div style="background:white; border-radius:12px; padding:20px;">
+              <h3 style="font-size:15px; font-weight:600; margin-bottom:16px;">Top Campaigns</h3>
+              <div class="empty-state" style="padding:30px;">
+                <div style="font-size:36px; margin-bottom:8px;">📊</div>
+                <p style="font-size:14px; font-weight:500; color:#475569;">No Campaigns Yet</p>
+                <p style="font-size:13px; color:#94a3b8;">Start your first campaign to see metrics here</p>
+                <button class="teal-btn" style="margin-top:12px;" onclick="appNav('campaigns')">Create Campaign</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== LISTS PAGE ====== -->
+        <div id="page-lists" class="page">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <h2 style="font-size:20px; font-weight:700;">Lists</h2>
+            <button class="teal-btn" onclick="showModal('New List', '<input placeholder=&quot;List name&quot; class=&quot;border border-gray-200 rounded-lg px-3 py-2 w-full mb-3&quot;>')">+ Add New List</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px;">
+            <div class="stat-card"><div class="icon" style="background:#eff6ff; color:#3b82f6;">📋</div><div><div style="font-size:20px; font-weight:700;" id="lists-total">0</div><div style="font-size:12px; color:#64748b;">Total Lists</div></div></div>
+            <div class="stat-card"><div class="icon" style="background:#f0fdf4; color:#22c55e;">👥</div><div><div style="font-size:20px; font-weight:700;" id="lists-leads">0</div><div style="font-size:12px; color:#64748b;">Total Leads</div></div></div>
+            <div class="stat-card"><div class="icon" style="background:#faf5ff; color:#a855f7;">📧</div><div><div style="font-size:20px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Leads with email</div></div></div>
+            <div class="stat-card"><div class="icon" style="background:#ecfdf5; color:#10b981;">✅</div><div><div style="font-size:20px; font-weight:700;">0%</div><div style="font-size:12px; color:#64748b;">Verified rate</div></div></div>
+            <div class="stat-card"><div class="icon" style="background:#fef2f2; color:#ef4444;">⚠️</div><div><div style="font-size:20px; font-weight:700;">0%</div><div style="font-size:12px; color:#64748b;">At risk</div></div></div>
+          </div>
+          <div style="background:white; border-radius:12px; overflow:hidden;">
+            <div style="padding:16px; display:flex; gap:12px; align-items:center; border-bottom:1px solid #f1f5f9;">
+              <input id="list-search" placeholder="Search for lists..." style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:240px;" />
+              <button class="outline-btn">↻ Refresh</button>
+              <button class="outline-btn">Sort by ▾</button>
+            </div>
+            <table>
+              <thead><tr><th>NAME</th><th>STATS</th><th>EMAIL STATS</th><th>CAMPAIGNS</th><th>ACTION</th></tr></thead>
+              <tbody id="lists-table-body"><tr><td colspan="5" style="text-align:center; padding:40px; color:#94a3b8;">No lists yet. Create your first list to get started.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ====== CAMPAIGNS PAGE ====== -->
+        <div id="page-campaigns" class="page">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <h2 style="font-size:20px; font-weight:700;">Campaigns</h2>
+            <div style="display:flex; gap:8px;">
+              <button class="teal-btn">✨ Create with AI</button>
+              <button class="teal-btn" style="background:#0d9488;" onclick="showModal('New Campaign', '<input placeholder=&quot;Campaign name&quot; class=&quot;border border-gray-200 rounded-lg px-3 py-2 w-full mb-3&quot;><textarea placeholder=&quot;Subject&quot; class=&quot;border border-gray-200 rounded-lg px-3 py-2 w-full mb-3&quot;></textarea><textarea placeholder=&quot;Body&quot; class=&quot;border border-gray-200 rounded-lg px-3 py-2 w-full mb-3 h-24&quot;></textarea>')">+ Create Campaign</button>
+            </div>
+          </div>
+          <div class="pulse-card" style="margin-bottom:20px;">
+            <p style="font-size:14px; color:#0d9488; font-weight:500;">💡 Ready to start outreach? Tell VendFusion about your target audience and it will help craft your first campaign.</p>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:12px; margin-bottom:20px;">
+            <div class="stat-card"><div><div style="font-size:20px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Total Campaigns</div></div></div>
+            <div class="stat-card"><div><div style="font-size:20px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Total People</div></div></div>
+            <div class="stat-card"><div><div style="font-size:20px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Emails sent</div></div></div>
+            <div class="stat-card"><div><div style="font-size:20px; font-weight:700;">0%</div><div style="font-size:12px; color:#64748b;">Open rate</div></div></div>
+            <div class="stat-card"><div><div style="font-size:20px; font-weight:700;">0%</div><div style="font-size:12px; color:#64748b;">Reply rate</div></div></div>
+            <div class="stat-card"><div><div style="font-size:20px; font-weight:700;">0%</div><div style="font-size:12px; color:#64748b;">Bounce rate</div></div></div>
+            <div class="stat-card"><div><div style="font-size:20px; font-weight:700;">0</div><div style="font-size:12px; color:#64748b;">Interested</div></div></div>
+          </div>
+          <div style="background:white; border-radius:12px; overflow:hidden;">
+            <div style="padding:16px; display:flex; gap:12px; align-items:center; border-bottom:1px solid #f1f5f9;">
+              <input placeholder="Search Campaigns" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:200px;" />
+              <button class="outline-btn">↻ Refresh</button>
+              <button class="outline-btn">Status ▾</button>
+              <button class="teal-btn" style="margin-left:auto;">📥 Export</button>
+            </div>
+            <div class="empty-state" style="padding:60px;">
+              <div style="font-size:48px; margin-bottom:12px;">🚀</div>
+              <p style="font-size:16px; font-weight:600; color:#0f172a;">Your first campaign is one click away</p>
+              <p style="font-size:14px; color:#94a3b8; margin:8px 0 16px;">Send personalized emails, follow-ups, and see replies—all in one place.</p>
+              <div style="display:flex; gap:8px; justify-content:center;">
+                <button class="teal-btn" onclick="showModal('New Campaign', '')">+ Create Campaign</button>
+                <button class="outline-btn">✨ Create with AI</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== EMAIL ACCOUNTS PAGE ====== -->
+        <div id="page-email-accounts" class="page">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <h2 style="font-size:20px; font-weight:700;">Email Accounts</h2>
+            <button class="teal-btn" onclick="showModal('Connect Email', '<select class=&quot;border border-gray-200 rounded-lg px-3 py-2 w-full mb-3&quot;><option>Gmail</option><option>Outlook</option><option>Custom SMTP</option></select><input placeholder=&quot;Email&quot; class=&quot;border border-gray-200 rounded-lg px-3 py-2 w-full mb-3&quot; />')">+ Connect Email</button>
+          </div>
+          <div class="pulse-card" style="margin-bottom:20px;">
+            <p style="font-size:14px; color:#0d9488; font-weight:500;">💡 You haven't connected any sending inboxes yet. Connect at least one to start warmup and outreach.</p>
+          </div>
+          <div style="background:white; border-radius:12px; overflow:hidden;">
+            <div style="padding:16px; display:flex; gap:12px; align-items:center; border-bottom:1px solid #f1f5f9;">
+              <input placeholder="Search for emails..." style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:240px;" />
+            </div>
+            <div class="empty-state" style="padding:60px;">
+              <div style="font-size:48px; margin-bottom:12px;">📬</div>
+              <p style="font-size:16px; font-weight:600; color:#0f172a;">Connect your first inbox</p>
+              <p style="font-size:14px; color:#94a3b8; margin:8px 0 16px;">Connect a Gmail, Outlook, or SMTP inbox to start warmup and send campaigns — it takes about a minute.</p>
+              <button class="teal-btn">+ Connect Email</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== FINDER COMPANY PAGE ====== -->
+        <div id="page-finder-company" class="page">
+          <div style="display:flex; gap:16px; margin-bottom:24px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
+            <span style="padding-bottom:8px; font-size:14px; font-weight:600; border-bottom:2px solid #14b8a6;">Company Finder</span>
+            <span style="color:#64748b; cursor:pointer; padding-bottom:8px; font-size:14px;" onclick="appNav('finder-people')">People Finder</span>
+          </div>
+          <div style="background:white; border-radius:12px; padding:40px; text-align:center;">
+            <p style="font-size:24px; font-weight:700; color:#0f172a; margin-bottom:8px;">Find your next customers</p>
+            <p style="font-size:14px; color:#94a3b8; margin-bottom:24px;">Enter a company website or describe what you're looking for</p>
+            <div style="max-width:560px; margin:0 auto; position:relative;">
+              <input id="finder-company-input" placeholder="e.g. paynixa.in or technology startups in India" style="border:2px solid #e2e8f0; border-radius:12px; padding:14px 60px 14px 16px; font-size:14px; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.06); outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#14b8a6'" onblur="this.style.borderColor='#e2e8f0'" />
+              <button onclick="searchCompany()" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:#14b8a6; color:white; border:none; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:16px;">→</button>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap;">
+              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('finder-company-input').value='Technology companies in India'; searchCompany();">Technology companies in India</button>
+              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('finder-company-input').value='SaaS startups in US'; searchCompany();">SaaS startups in US</button>
+              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('finder-company-input').value='Marketing agencies'; searchCompany();">Marketing agencies</button>
+            </div>
+          </div>
+          <div id="finder-results" style="margin-top:20px; display:none;">
+            <div id="finder-loading" style="text-align:center; padding:40px; display:none;">
+              <div style="font-size:32px; margin-bottom:8px;">🔍</div>
+              <p style="color:#64748b;">Analyzing company...</p>
+            </div>
+            <div id="finder-result-card" style="background:white; border-radius:12px; padding:24px; display:none;"></div>
+          </div>
+        </div>
+
+        <!-- ====== FINDER PEOPLE PAGE ====== -->
+        <div id="page-finder-people" class="page">
+          <div style="display:flex; gap:16px; margin-bottom:24px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
+            <span style="color:#64748b; cursor:pointer; padding-bottom:8px; font-size:14px;" onclick="appNav('finder-company')">Company Finder</span>
+            <span style="padding-bottom:8px; font-size:14px; font-weight:600; border-bottom:2px solid #14b8a6;">People Finder</span>
+          </div>
+          <div style="background:white; border-radius:16px; padding:24px; margin-bottom:24px; border:1px solid #e2e8f0;">
+            <p style="font-size:14px; color:#0d9488; font-weight:500; margin-bottom:16px;">Enter a company name to find key decision makers and contacts.</p>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div style="flex:1; position:relative;">
+                <svg style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input id="people-finder-input" placeholder="e.g. TechCorp India or FinServe Solutions" style="border:2px solid #e2e8f0; border-radius:12px; padding:14px 16px 14px 40px; font-size:14px; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.06); outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#14b8a6'" onblur="this.style.borderColor='#e2e8f0'" />
+              </div>
+              <button onclick="searchPeople()" style="background:linear-gradient(135deg,#0d9488,#14b8a6); color:white; border:none; border-radius:12px; padding:14px 28px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(13,148,136,0.3);">Find People</button>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('people-finder-input').value='TechCorp India'; searchPeople();">TechCorp India</button>
+              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('people-finder-input').value='FinServe Solutions'; searchPeople();">FinServe Solutions</button>
+              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('people-finder-input').value='CloudWare Systems'; searchPeople();">CloudWare Systems</button>
+            </div>
+          </div>
+          <div id="people-finder-results" style="display:none;">
+            <div id="people-finder-loading" style="text-align:center; padding:40px; display:none;">
+              <div style="width:40px; height:40px; border:3px solid #e2e8f0; border-top-color:#14b8a6; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px;"></div>
+              <p style="color:#64748b; font-size:14px;">Searching for key contacts...</p>
+            </div>
+            <div id="people-finder-result-card" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- ====== AI WORKFLOW PAGE ====== -->
+        <div id="page-ai-workflow" class="page">
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:20px;">AI Workflow</h2>
+          <div class="pulse-card" style="margin-bottom:20px;">
+            <p style="font-size:14px; color:#0d9488; font-weight:500;">💡 Workflows automate lead enrichment, company discovery, and campaign sequences. Set one up and save hours every week.</p>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+            <div style="background:white; border-radius:12px; padding:24px; cursor:pointer; border:1px solid #e2e8f0; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#14b8a6'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="font-size:28px; margin-bottom:12px;">📋</div>
+              <h4 style="font-size:15px; font-weight:600; margin-bottom:4px;">Custom Workflow</h4>
+              <p style="font-size:13px; color:#64748b;">Start from scratch with a basic setup.</p>
+            </div>
+            <div style="background:white; border-radius:12px; padding:24px; cursor:pointer; border:1px solid #e2e8f0; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#14b8a6'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="font-size:28px; margin-bottom:12px;">🏢</div>
+              <h4 style="font-size:15px; font-weight:600; margin-bottom:4px;">Staffing and Recruiting</h4>
+              <p style="font-size:13px; color:#64748b;">Find companies hiring in the last 24 hours.</p>
+            </div>
+            <div style="background:white; border-radius:12px; padding:24px; cursor:pointer; border:1px solid #e2e8f0; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#14b8a6'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="font-size:28px; margin-bottom:12px;">💻</div>
+              <h4 style="font-size:15px; font-weight:600; margin-bottom:4px;">B2B SaaS</h4>
+              <p style="font-size:13px; color:#64748b;">Target B2B SaaS companies with specific employee counts.</p>
+            </div>
+            <div style="background:white; border-radius:12px; padding:24px; cursor:pointer; border:1px solid #e2e8f0; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#14b8a6'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="font-size:28px; margin-bottom:12px;">📢</div>
+              <h4 style="font-size:15px; font-weight:600; margin-bottom:4px;">Marketing Agencies</h4>
+              <p style="font-size:13px; color:#64748b;">Connect with marketing and advertising agencies.</p>
+            </div>
+            <div style="background:white; border-radius:12px; padding:24px; cursor:pointer; border:1px solid #e2e8f0; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#14b8a6'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="font-size:28px; margin-bottom:12px;">🏠</div>
+              <h4 style="font-size:15px; font-weight:600; margin-bottom:4px;">Real Estate</h4>
+              <p style="font-size:13px; color:#64748b;">Target commercial real estate and property management.</p>
+            </div>
+            <div style="background:white; border-radius:12px; padding:24px; cursor:pointer; border:1px solid #e2e8f0; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#14b8a6'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="font-size:28px; margin-bottom:12px;">🏦</div>
+              <h4 style="font-size:15px; font-weight:600; margin-bottom:4px;">Financial Services</h4>
+              <p style="font-size:13px; color:#64748b;">Find insurance and wealth management companies.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== UNIBOX INBOX ====== -->
+        <div id="page-unibox-inbox" class="page">
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:20px;">Unibox — Inbox</h2>
+          <div style="background:white; border-radius:12px; padding:16px; display:flex; gap:20px;">
+            <div style="width:200px; border-right:1px solid #e2e8f0; padding-right:16px;">
+              <p style="font-size:13px; font-weight:600; margin-bottom:12px;">Status</p>
+              <div class="sidebar-item active" style="margin-bottom:4px;">📥 All</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">👤 People</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">⭐ Interested</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">📅 Meeting Booked</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">✅ Meeting Completed</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">🏆 Won</div>
+            </div>
+            <div style="flex:1;" class="empty-state">
+              <div style="font-size:48px; margin-bottom:12px;">📭</div>
+              <p style="font-size:16px; font-weight:600; color:#0f172a;">No Data Available</p>
+              <p style="font-size:14px; color:#94a3b8;">No emails to show</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== UNIBOX REPLY ====== -->
+        <div id="page-unibox-reply" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Dashboard</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Reply AI</span></div>
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:20px;">Reply AI</h2>
+          <div style="display:flex; gap:16px; margin-bottom:20px;">
+            <button class="tab-active" style="padding-bottom:8px; font-size:14px;">Drafts</button>
+            <button style="color:#64748b; font-size:14px; padding-bottom:8px;">Agent Settings</button>
+          </div>
+          <div style="background:white; border-radius:12px; padding:60px;" class="empty-state">
+            <p style="font-size:16px; font-weight:600; color:#0f172a; margin-bottom:16px;">No drafts available.</p>
+            <div style="display:flex; gap:8px; justify-content:center;">
+              <button class="teal-btn">✨ Enable Reply AI</button>
+              <button class="teal-btn" onclick="appNav('campaigns')">+ Create Campaign</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== LINKEDIN AUTOMATION ====== -->
+        <div id="page-linkedin" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Home</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">LinkedIn Automation</span></div>
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:4px;">LinkedIn Outreach That Looks Manual</h2>
+          <p style="color:#64748b; font-size:14px; margin-bottom:20px;">Send invites from any list or campaign, throttled to match human pacing.</p>
+          <div style="background:white; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="font-size:24px;">🔗</div>
+              <div style="flex:1;">
+                <p style="font-size:14px; font-weight:600;">Connect LinkedIn in 2 steps</p>
+                <p style="font-size:13px; color:#64748b;">1. Install our Chrome extension. 2. Open LinkedIn — we'll detect it automatically.</p>
+              </div>
+              <button class="teal-btn">Install extension →</button>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+            <div style="background:white; border-radius:12px; padding:20px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;"><span style="color:#94a3b8; font-size:13px;">01</span><span style="font-weight:600;">Connect</span></div>
+              <p style="font-size:13px; color:#64748b;">Install the extension and sign in to LinkedIn once. We never store your password.</p>
+            </div>
+            <div style="background:white; border-radius:12px; padding:20px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;"><span style="color:#94a3b8; font-size:13px;">02</span><span style="font-weight:600;">Send</span></div>
+              <p style="font-size:13px; color:#64748b;">Trigger invites from any list or inside a campaign sequence. Daily and weekly caps enforced.</p>
+            </div>
+            <div style="background:white; border-radius:12px; padding:20px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;"><span style="color:#94a3b8; font-size:13px;">03</span><span style="font-weight:600;">Track</span></div>
+              <p style="font-size:13px; color:#64748b;">See pending, accepted, and withdrawn invites in one place. Replies flow into Unibox.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== CRM ACCOUNTS ====== -->
+        <div id="page-crm-accounts" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Home</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">CRM</span><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Account</span></div>
+          <button class="teal-btn" style="margin-bottom:16px;">+ Add Account</button>
+          <div style="background:white; border-radius:12px; overflow:hidden;">
+            <div style="padding:16px; display:flex; gap:12px; align-items:center; border-bottom:1px solid #f1f5f9;">
+              <input placeholder="Search by name, phone, industry..." style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:240px;" />
+              <button class="outline-btn">↻ Refresh</button>
+              <button class="outline-btn" style="color:#ef4444; border-color:#fecaca;">🗑 Delete</button>
+              <button class="outline-btn">Sort By: Date ▾</button>
+              <button class="teal-btn" style="margin-left:auto;">📥 Import</button>
+              <button class="teal-btn" style="background:#3b82f6;">📤 Export</button>
+            </div>
+            <div class="empty-state" style="padding:60px;">
+              <div style="font-size:48px; margin-bottom:12px;">🏢</div>
+              <p style="font-size:16px; font-weight:600; color:#0f172a;">No Data Available</p>
+              <p style="font-size:14px; color:#94a3b8;">It looks like there is no data to display at the moment.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== CRM CONTACTS ====== -->
+        <div id="page-crm-contacts" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Home</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">CRM</span><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Contact</span></div>
+          <button class="teal-btn" style="margin-bottom:16px;">+ Add Contact</button>
+          <div style="background:white; border-radius:12px; overflow:hidden;">
+            <div style="padding:16px; display:flex; gap:12px; align-items:center; border-bottom:1px solid #f1f5f9;">
+              <input placeholder="Search for ..." style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:240px;" />
+              <button class="outline-btn">↻ Refresh</button>
+              <button class="outline-btn" style="color:#ef4444; border-color:#fecaca;">🗑 Delete</button>
+              <button class="outline-btn">Sort By: Date ▾</button>
+              <button class="teal-btn" style="margin-left:auto;">📥 Import</button>
+              <button class="teal-btn" style="background:#3b82f6;">📤 Export</button>
+            </div>
+            <div class="empty-state" style="padding:60px;">
+              <div style="font-size:48px; margin-bottom:12px;">👤</div>
+              <p style="font-size:16px; font-weight:600; color:#0f172a;">No Data Available</p>
+              <p style="font-size:14px; color:#94a3b8;">It looks like there is no data to display at the moment.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== CRM OPPORTUNITY (Kanban) ====== -->
+        <div id="page-crm-opportunity" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Home</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">CRM</span><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Opportunity</span></div>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+            <h2 style="font-size:20px; font-weight:700;">Opportunity</h2>
+            <span style="background:#14b8a6; color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;">0</span>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <button class="teal-btn">+ Add Opportunity</button>
+          </div>
+          <div style="display:flex; gap:16px; overflow-x:auto; padding-bottom:16px;">
+            <div class="kanban-col" style="border-top:3px solid #e2e8f0;">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:14px; font-weight:600;">Qualification</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#94a3b8; font-size:13px;">$0</span><span style="background:#e2e8f0; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">0</span></div>
+              </div>
+              <div style="padding:12px;"><button class="teal-btn" style="width:100%;">Add</button></div>
+            </div>
+            <div class="kanban-col" style="border-top:3px solid #14b8a6;">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:14px; font-weight:600;">DecisionMakers</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#94a3b8; font-size:13px;">$0</span><span style="background:#ccfbf1; color:#14b8a6; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">0</span></div>
+              </div>
+              <div style="padding:12px;"><button class="teal-btn" style="width:100%;">Add</button></div>
+            </div>
+            <div class="kanban-col" style="border-top:3px solid #a855f7;">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:14px; font-weight:600;">Demonstration</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#94a3b8; font-size:13px;">$0</span><span style="background:#faf5ff; color:#a855f7; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">0</span></div>
+              </div>
+              <div style="padding:12px;"><button class="teal-btn" style="width:100%;">Add</button></div>
+            </div>
+            <div class="kanban-col" style="border-top:3px solid #3b82f6;">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:14px; font-weight:600;">Proposal</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#94a3b8; font-size:13px;">$0</span><span style="background:#eff6ff; color:#3b82f6; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">0</span></div>
+              </div>
+              <div style="padding:12px;"><button class="teal-btn" style="width:100%;">Add</button></div>
+            </div>
+            <div class="kanban-col" style="border-top:3px solid #22c55e;">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:14px; font-weight:600;">Negotiation</span>
+                <div style="display:flex; align-items:center; gap:6px;"><span style="color:#94a3b8; font-size:13px;">$0</span><span style="background:#f0fdf4; color:#22c55e; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">0</span></div>
+              </div>
+              <div style="padding:12px;"><button class="teal-btn" style="width:100%;">Add</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== CRM TASKS (Kanban) ====== -->
+        <div id="page-crm-tasks" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Home</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">CRM</span><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Tasks</span></div>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+            <h2 style="font-size:20px; font-weight:700;">Tasks</h2>
+            <span style="background:#14b8a6; color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;">0</span>
+            <button class="teal-btn" style="margin-left:auto;">+ Add Task</button>
+          </div>
+          <div style="display:flex; gap:16px;">
+            <div class="kanban-col" style="border-top:3px solid #f97316;">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:14px; font-weight:600;">Not Started</span>
+                <span style="background:#fff7ed; color:#f97316; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">0</span>
+              </div>
+              <div style="padding:12px;"><button class="teal-btn" style="width:100%;">Add Task</button></div>
+            </div>
+            <div class="kanban-col" style="border-top:3px solid #a855f7;">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:14px; font-weight:600;">In Progress</span>
+                <span style="background:#faf5ff; color:#a855f7; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">0</span>
+              </div>
+              <div style="padding:12px;"><button class="teal-btn" style="width:100%;">Add Task</button></div>
+            </div>
+            <div class="kanban-col" style="border-top:3px solid #22c55e;">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:14px; font-weight:600;">Completed</span>
+                <span style="background:#f0fdf4; color:#22c55e; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">0</span>
+              </div>
+              <div style="padding:12px;"><button class="teal-btn" style="width:100%;">Add Task</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== REPORTS CRM ====== -->
+        <div id="page-reports-crm" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Home</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Reports</span><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">CRM</span></div>
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:20px;">CRM Reports</h2>
+          <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px;">
+            <div class="stat-card"><div class="icon" style="background:#eff6ff; color:#3b82f6;">📊</div><div><div style="font-size:12px; color:#64748b;">Total Account</div><div style="font-size:24px; font-weight:700;">0</div></div></div>
+            <div class="stat-card"><div class="icon" style="background:#f0fdf4; color:#22c55e;">💰</div><div><div style="font-size:12px; color:#64748b;">Total Opportunities</div><div style="font-size:24px; font-weight:700;">0</div></div></div>
+            <div class="stat-card"><div class="icon" style="background:#faf5ff; color:#a855f7;">👤</div><div><div style="font-size:12px; color:#64748b;">Total Contacts</div><div style="font-size:24px; font-weight:700;">0</div></div></div>
+            <div class="stat-card"><div class="icon" style="background:#fff7ed; color:#f97316;">✅</div><div><div style="font-size:12px; color:#64748b;">Total Tasks</div><div style="font-size:24px; font-weight:700;">0</div></div></div>
+            <div class="stat-card"><div class="icon" style="background:#fef2f2; color:#ef4444;">⏳</div><div><div style="font-size:12px; color:#64748b;">Pending Tasks</div><div style="font-size:24px; font-weight:700;">0</div></div></div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 2fr; gap:20px;">
+            <div style="background:#3b82f6; border-radius:12px; padding:24px; color:white;">
+              <p style="font-size:14px; font-weight:500; opacity:0.9;">Total Revenue</p>
+              <p style="font-size:36px; font-weight:700;">$0</p>
+            </div>
+            <div style="background:white; border-radius:12px; padding:20px;">
+              <h3 style="font-size:15px; font-weight:600; margin-bottom:16px;">Sales Overview</h3>
+              <div style="height:200px; border:1px dashed #e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:14px;">No data yet</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== REPORTS CAMPAIGNS ====== -->
+        <div id="page-reports-campaigns" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Home</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Reports</span><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Campaigns</span></div>
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:20px;">Campaigns Reports</h2>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;">
+            <div class="stat-card" style="border-left:3px solid #3b82f6;"><div><div style="font-size:24px; font-weight:700; color:#3b82f6;">0</div><div style="font-size:12px; color:#64748b;">Open</div></div></div>
+            <div class="stat-card" style="border-left:3px solid #a855f7;"><div><div style="font-size:24px; font-weight:700; color:#a855f7;">0</div><div style="font-size:12px; color:#64748b;">In Progress</div></div></div>
+            <div class="stat-card" style="border-left:3px solid #22c55e;"><div><div style="font-size:24px; font-weight:700; color:#22c55e;">0</div><div style="font-size:12px; color:#64748b;">Won</div></div></div>
+            <div class="stat-card" style="border-left:3px solid #ef4444;"><div><div style="font-size:24px; font-weight:700; color:#ef4444;">0</div><div style="font-size:12px; color:#64748b;">Lost</div></div></div>
+          </div>
+          <div style="background:white; border-radius:12px; padding:40px; text-align:center;">
+            <h3 style="font-size:20px; font-weight:700; margin-bottom:4px;">Funnel Diagram</h3>
+            <p style="font-size:13px; color:#94a3b8; margin-bottom:20px;">Hover over stages to see details</p>
+            <div style="max-width:500px; margin:0 auto;">
+              <div style="background:#3b82f6; color:white; padding:16px; border-radius:8px 8px 0 0; font-weight:600;">Open — 0</div>
+              <div style="background:#a855f7; color:white; padding:14px; margin:0 20px; font-weight:600;">In Progress — 0</div>
+              <div style="background:#ec4899; color:white; padding:12px; margin:0 40px; font-weight:600;">Won — 0</div>
+              <div style="background:#ef4444; color:white; padding:10px; margin:0 60px; border-radius:0 0 8px 8px; font-weight:600;">Lost — 0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== IDEAL CUSTOMER ====== -->
+        <div id="page-ideal-customer" class="page">
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:20px;">Ideal Customer Profile</h2>
+          <div class="pulse-card" style="margin-bottom:20px;">
+            <p style="font-size:14px; color:#0d9488; font-weight:500;">💡 Define your perfect buyer once and let AI do the rest. This profile powers Company Finder, Lead Scoring, Outreach AI, and Reply Agent.</p>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+            <div style="background:white; border-radius:12px; padding:24px;">
+              <h3 style="font-size:16px; font-weight:600; margin-bottom:16px;">Your Company</h3>
+              <div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Company</label><input placeholder="Company name" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+              <div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Industry</label><input placeholder="e.g. Technology" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+              <div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">What You Sell</label><textarea placeholder="Describe your product/service" class="border border-gray-200 rounded-lg px-3 py-2 w-full" style="height:80px; margin-top:4px;"></textarea></div>
+              <div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Value Proposition</label><textarea placeholder="Why should they buy from you?" class="border border-gray-200 rounded-lg px-3 py-2 w-full" style="height:60px; margin-top:4px;"></textarea></div>
+              <button class="teal-btn">Save Profile</button>
+            </div>
+            <div style="background:white; border-radius:12px; padding:24px;">
+              <h3 style="font-size:16px; font-weight:600; margin-bottom:16px;">Target Companies</h3>
+              <div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Industries</label><input placeholder="e.g. Technology, SaaS" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+              <div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Company Sizes</label><input placeholder="e.g. 10-50, 50-200" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+              <div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Locations</label><input placeholder="e.g. United States, India" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+              <div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Keywords</label><input placeholder="e.g. Series A, Remote" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+            </div>
+          </div>
+          <div style="background:white; border-radius:12px; padding:24px; margin-top:20px;">
+            <h3 style="font-size:16px; font-weight:600; margin-bottom:16px;">Buyer Persona</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+              <div>
+                <label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Job Titles</label>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+                  <span class="tag" style="background:#f0fdfa; color:#0d9488; border:1px solid #ccfbf1;">Founder</span>
+                  <span class="tag" style="background:#f0fdfa; color:#0d9488; border:1px solid #ccfbf1;">CEO</span>
+                  <span class="tag" style="background:#f0fdfa; color:#0d9488; border:1px solid #ccfbf1;">CTO</span>
+                  <span class="tag" style="background:#f0fdfa; color:#0d9488; border:1px solid #ccfbf1;">VP Sales</span>
+                </div>
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:600; color:#94a3b8; text-transform:uppercase;">Pain Points</label>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+                  <span class="tag" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">Low reply rate</span>
+                  <span class="tag" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">Manual outreach</span>
+                  <span class="tag" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">No personalization</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== SETUP GUIDE ====== -->
+        <div id="page-setup-guide" class="page">
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:4px;">Automate Your Growth</h2>
+          <p style="color:#64748b; font-size:14px; margin-bottom:24px;">VendFusion finds the right people, crafts personalized emails, and books meetings for you autonomously.</p>
+          <div style="background:white; border-radius:12px; padding:24px; margin-bottom:20px;">
+            <h3 style="font-size:15px; font-weight:600; margin-bottom:16px;">The Pipeline</h3>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+              <div style="text-align:center; padding:12px;"><div style="font-size:28px; margin-bottom:4px;">🎯</div><div style="font-size:12px; font-weight:500;">Ideal Customer</div></div>
+              <span style="color:#cbd5e1;">→</span>
+              <div style="text-align:center; padding:12px;"><div style="font-size:28px; margin-bottom:4px;">🔍</div><div style="font-size:12px; font-weight:500;">People Engine</div></div>
+              <span style="color:#cbd5e1;">→</span>
+              <div style="text-align:center; padding:12px;"><div style="font-size:28px; margin-bottom:4px;">✉️</div><div style="font-size:12px; font-weight:500;">Email Engine</div></div>
+              <span style="color:#cbd5e1;">→</span>
+              <div style="text-align:center; padding:12px;"><div style="font-size:28px; margin-bottom:4px;">💬</div><div style="font-size:12px; font-weight:500;">Reply AI</div></div>
+              <span style="color:#cbd5e1;">→</span>
+              <div style="text-align:center; padding:12px;"><div style="font-size:28px; margin-bottom:4px;">📅</div><div style="font-size:12px; font-weight:500;">Meetings</div></div>
+              <span style="color:#cbd5e1;">→</span>
+              <div style="text-align:center; padding:12px;"><div style="font-size:28px; margin-bottom:4px;">👥</div><div style="font-size:12px; font-weight:500;">CRM</div></div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+            <div style="background:white; border-radius:12px; padding:24px; border:2px solid #14b8a6;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="font-size:20px;">🎯</span>
+                <div><div style="font-size:16px; font-weight:600;">Ideal Customer</div><span class="tag" style="background:#f0fdfa; color:#0d9488; font-size:11px;">Recommended</span></div>
+              </div>
+              <p style="font-size:13px; color:#64748b; margin-bottom:12px;">Define your perfect buyer once and let AI do the rest.</p>
+              <ul style="font-size:13px; color:#64748b; margin-bottom:16px; list-style:none;">
+                <li style="padding:2px 0;">○ Find highly targeted people</li>
+                <li style="padding:2px 0;">○ Better personalization</li>
+                <li style="padding:2px 0;">○ Higher reply rates</li>
+              </ul>
+              <button class="teal-btn" style="width:100%;" onclick="appNav('ideal-customer')">🎯 Define Profile</button>
+            </div>
+            <div style="background:white; border-radius:12px; padding:24px; border:1px solid #e2e8f0;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="font-size:20px;">⚙️</span>
+                <div><div style="font-size:16px; font-weight:600;">Workflows</div><span class="tag" style="background:#f1f5f9; color:#64748b; font-size:11px;">Visual builder</span></div>
+              </div>
+              <p style="font-size:13px; color:#64748b; margin-bottom:12px;">Build step-by-step workflows with full visual control.</p>
+              <ul style="font-size:13px; color:#64748b; margin-bottom:16px; list-style:none;">
+                <li style="padding:2px 0;">○ Visual campaign builder</li>
+                <li style="padding:2px 0;">○ Best for complex workflows</li>
+                <li style="padding:2px 0;">○ Step-by-step progress tracking</li>
+              </ul>
+              <button class="outline-btn" style="width:100%;" onclick="appNav('ai-workflow')">⚙️ Open Workflows</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== SETTINGS ====== -->
+        <div id="page-settings" class="page">
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:4px;">Settings</h2>
+          <p style="color:#64748b; font-size:14px; margin-bottom:24px;">Configure your settings here</p>
+          <div style="display:flex; gap:24px;">
+            <div style="width:200px; flex-shrink:0;">
+              <div class="sidebar-item active" style="margin-bottom:4px;">General</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Organization</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Configuration</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Users And Teams</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Requests</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Manage Roles</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Plan Overview</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Appearance</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Affiliate & Referral</div>
+              <div class="sidebar-item" style="margin-bottom:4px;">Do Not Contact</div>
+            </div>
+            <div style="flex:1;">
+              <div style="background:white; border-radius:12px; padding:24px; margin-bottom:20px;">
+                <h3 style="font-size:16px; font-weight:600; margin-bottom:4px;">Profile Information</h3>
+                <p style="font-size:13px; color:#64748b; margin-bottom:16px;">Update your profile information here</p>
+                <div style="margin-bottom:12px;"><label style="font-size:12px; font-weight:500; color:#475569;">First Name</label><input id="settings-firstname" value="" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+                <div style="margin-bottom:12px;"><label style="font-size:12px; font-weight:500; color:#475569;">Last Name</label><input id="settings-lastname" value="" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                  <button class="outline-btn">Cancel</button>
+                  <button class="teal-btn">Update Profile</button>
+                </div>
+              </div>
+              <div style="background:white; border-radius:12px; padding:24px;">
+                <h3 style="font-size:16px; font-weight:600; margin-bottom:4px;">Change Password</h3>
+                <p style="font-size:13px; color:#64748b; margin-bottom:16px;">Update your password to keep your account secure</p>
+                <div style="margin-bottom:12px;"><label style="font-size:12px; font-weight:500; color:#475569;">Current Password</label><input type="password" placeholder="Enter your current password" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+                <div style="margin-bottom:12px;"><label style="font-size:12px; font-weight:500; color:#475569;">New Password</label><input type="password" placeholder="Enter your new password" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+                <div style="margin-bottom:12px;"><label style="font-size:12px; font-weight:500; color:#475569;">Confirm New Password</label><input type="password" placeholder="Confirm your new password" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:4px;" /></div>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                  <button class="outline-btn">Cancel</button>
+                  <button class="teal-btn">Update Password</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== INTEGRATIONS ====== -->
+        <div id="page-integrations" class="page">
+          <div style="display:flex; gap:8px; margin-bottom:8px;"><a style="color:#14b8a6; font-size:13px; text-decoration:none;">Home</a><span style="color:#94a3b8; font-size:13px;">›</span><span style="font-size:13px;">Integrations</span></div>
+          <h2 style="font-size:20px; font-weight:700; margin-bottom:4px;">Integrations</h2>
+          <p style="color:#64748b; font-size:14px; margin-bottom:20px;">Download extensions and configure search providers</p>
+          <div style="display:flex; gap:16px; margin-bottom:24px; border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+            <button class="tab-active" id="int-tab-ext" onclick="showIntTab('ext')">📥 Download Extension</button>
+            <button style="color:#64748b; font-size:14px; padding-bottom:8px;" id="int-tab-api" onclick="showIntTab('api')">🔑 Email & Phone Search</button>
+            <button style="color:#64748b; font-size:14px; padding-bottom:8px;" id="int-tab-crm" onclick="showIntTab('crm')">🔗 CRM</button>
+          </div>
+
+          <div id="int-content-ext">
+            <div style="background:white; border-radius:12px; padding:20px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px; height:40px; background:#14b8a6; border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-size:18px;">🔗</div>
+                <div><p style="font-size:14px; font-weight:600;">VendFusion - LinkedIn Jobs, Leads & Auto-Connect</p><p style="font-size:12px; color:#64748b;">Chrome extension — automatic updates from the Chrome Web Store</p></div>
+              </div>
+              <button class="teal-btn">Add to Chrome</button>
+            </div>
+          </div>
+
+          <div id="int-content-api" style="display:none;">
+            <h3 style="font-size:15px; font-weight:600; margin-bottom:16px;">API Key Configuration</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div style="background:white; border-radius:12px; padding:20px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;"><div style="width:32px; height:32px; background:#fee2e2; border-radius:8px; display:flex; align-items:center; justify-content:center;">🦊</div><div><p style="font-size:14px; font-weight:600;">Hunter</p><p style="font-size:12px; color:#64748b;">Find and verify professional email addresses</p></div></div>
+                <input placeholder="Enter your Hunter API key" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:8px;" />
+              </div>
+              <div style="background:white; border-radius:12px; padding:20px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;"><div style="width:32px; height:32px; background:#dbeafe; border-radius:8px; display:flex; align-items:center; justify-content:center;">🚀</div><div><p style="font-size:14px; font-weight:600;">Rocket Reach</p><p style="font-size:12px; color:#64748b;">Access contact information and social profiles</p></div></div>
+                <input placeholder="Enter your Rocket Reach API key" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:8px;" />
+              </div>
+              <div style="background:white; border-radius:12px; padding:20px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;"><div style="width:32px; height:32px; background:#fef9c3; border-radius:8px; display:flex; align-items:center; justify-content:center;">☀️</div><div><p style="font-size:14px; font-weight:600;">Apollo</p><p style="font-size:12px; color:#64748b;">Sales intelligence and engagement platform</p></div></div>
+                <input placeholder="Enter your Apollo API key" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:8px;" />
+              </div>
+              <div style="background:white; border-radius:12px; padding:20px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;"><div style="width:32px; height:32px; background:#e0f2fe; border-radius:8px; display:flex; align-items:center; justify-content:center;">🔵</div><div><p style="font-size:14px; font-weight:600;">Seamless</p><p style="font-size:12px; color:#64748b;">B2B contact and company data</p></div></div>
+                <input placeholder="Enter your Seamless API key" style="border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; margin-top:8px;" />
+              </div>
+            </div>
+          </div>
+
+          <div id="int-content-crm" style="display:none;">
+            <h3 style="font-size:15px; font-weight:600; margin-bottom:16px;">CRM Integrations</h3>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
+              <div style="background:white; border-radius:12px; padding:24px; text-align:center;">
+                <div style="font-size:36px; margin-bottom:8px;">🔴</div>
+                <h4 style="font-size:15px; font-weight:600; margin-bottom:8px;">HubSpot</h4>
+                <p style="font-size:12px; color:#64748b; margin-bottom:16px;">Sales, customer care, marketing, CRM and more.</p>
+                <button class="teal-btn" style="background:#6366f1; width:100%;">Connect</button>
+              </div>
+              <div style="background:white; border-radius:12px; padding:24px; text-align:center;">
+                <div style="font-size:36px; margin-bottom:8px;">🔵</div>
+                <h4 style="font-size:15px; font-weight:600; margin-bottom:8px;">Zoho CRM</h4>
+                <p style="font-size:12px; color:#64748b; margin-bottom:16px;">Empower your workforce with a 360-degree view.</p>
+                <button class="outline-btn" style="width:100%; opacity:0.6;">Coming Soon</button>
+              </div>
+              <div style="background:white; border-radius:12px; padding:24px; text-align:center;">
+                <div style="font-size:36px; margin-bottom:8px;">🟢</div>
+                <h4 style="font-size:15px; font-weight:600; margin-bottom:8px;">Pipedrive</h4>
+                <p style="font-size:12px; color:#64748b; margin-bottom:16px;">Sales CRM and pipeline management software.</p>
+                <button class="outline-btn" style="width:100%; opacity:0.6;">Coming Soon</button>
+              </div>
+              <div style="background:white; border-radius:12px; padding:24px; text-align:center; border:1px dashed #e2e8f0;">
+                <div style="font-size:36px; margin-bottom:8px;">👻</div>
+                <h4 style="font-size:15px; font-weight:600; margin-bottom:8px;">Request Integration</h4>
+                <p style="font-size:12px; color:#64748b; margin-bottom:16px;">Don't see your CRM? Contact us to request a native integration.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100; display:none; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:16px; padding:24px; width:400px; max-width:90vw; max-height:80vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 id="modal-title" style="font-size:16px; font-weight:600;"></h3>
+        <button onclick="closeModal()" style="cursor:pointer; color:#94a3b8; font-size:20px;">×</button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    // ===== Auth =====
+    const Auth = {
+      token: localStorage.getItem('vf_token'),
+      user: JSON.parse(localStorage.getItem('vf_user') || 'null'),
+      setAuth(token, user) {
+        this.token = token; this.user = user;
+        localStorage.setItem('vf_token', token);
+        localStorage.setItem('vf_user', JSON.stringify(user));
+      },
+      logout() { this.token = null; this.user = null; localStorage.removeItem('vf_token'); localStorage.removeItem('vf_user'); window.location.href = '/'; },
+      getHeaders() { const h = {'Content-Type':'application/json'}; if(this.token) h['Authorization'] = `Bearer ${this.token}`; return h; }
+    };
+
+    if (!Auth.token) { window.location.href = '/'; }
+
+    // ===== Sidebar Navigation =====
+    let currentPage = 'dashboard';
+    function appNav(page) {
+      currentPage = page;
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const el = document.getElementById('page-' + page);
+      if (el) el.classList.add('active');
+
+      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+      const navEl = document.querySelector(`[data-page="${page}"]`);
+      if (navEl) navEl.classList.add('active');
+
+      const names = {
+        'dashboard':'Dashboard','ideal-customer':'Ideal Customer','lists':'Lists','ai-workflow':'AI Workflow',
+        'finder-company':'Company Finder','finder-people':'People Finder','email-accounts':'Email Accounts',
+        'campaigns':'Campaigns','unibox-inbox':'Unibox - Inbox','unibox-reply':'Reply AI',
+        'linkedin':'LinkedIn Automation','crm-accounts':'CRM > Accounts','crm-contacts':'CRM > Contacts',
+        'crm-opportunity':'CRM > Opportunity','crm-tasks':'CRM > Tasks',
+        'reports-crm':'CRM Reports','reports-campaigns':'Campaign Reports',
+        'setup-guide':'Setup Guide','settings':'Settings','integrations':'Integrations'
+      };
+      document.getElementById('breadcrumb').innerHTML = `<a href="#" onclick="appNav('dashboard')">Home</a> > ${names[page] || page}`;
+
+      // Open parent subs if needed
+      if (page.startsWith('finder-')) document.getElementById('finder-sub').style.display = 'block';
+      if (page.startsWith('unibox-')) document.getElementById('unibox-sub').style.display = 'block';
+      if (page.startsWith('crm-')) document.getElementById('crm-sub').style.display = 'block';
+      if (page.startsWith('reports-')) document.getElementById('reports-sub').style.display = 'block';
+
+      window.history.pushState({}, '', '/' + page);
+    }
+
+    function toggleSub(id, el) {
+      const sub = document.getElementById(id);
+      sub.style.display = sub.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // ===== Load Data =====
+    async function loadDashboardData() {
+      try {
+        const r = await fetch(API_BASE + '/api/dashboard/stats/', { headers: Auth.getHeaders() });
+        if (r.ok) {
+          const d = await r.json();
+          document.getElementById('stat-replies').textContent = d.emails_replied || 0;
+          document.getElementById('stat-sent').textContent = d.emails_sent || 0;
+          document.getElementById('stat-campaigns').textContent = d.active_campaigns || 0;
+        }
+      } catch(e) {}
+      try {
+        const r = await fetch(API_BASE + '/api/leads/?limit=100', { headers: Auth.getHeaders() });
+        if (r.ok) {
+          const d = await r.json();
+          document.getElementById('stat-leads').textContent = d.length || 0;
+          document.getElementById('lists-leads').textContent = d.length || 0;
+        }
+      } catch(e) {}
+      try {
+        const r = await fetch(API_BASE + '/api/campaigns/?limit=100', { headers: Auth.getHeaders() });
+        if (r.ok) {
+          const d = await r.json();
+          document.getElementById('stat-campaigns').textContent = d.length || 0;
+        }
+      } catch(e) {}
+    }
+
+    // ===== Company Finder =====
+    async function searchCompany() {
+      const input = document.getElementById('finder-company-input').value.trim();
+      if (!input) return;
+
+      document.getElementById('finder-results').style.display = 'block';
+      document.getElementById('finder-loading').style.display = 'block';
+      document.getElementById('finder-result-card').style.display = 'none';
+
+      try {
+        const r = await fetch(API_BASE + '/api/ai/analyze-company', {
+          method: 'POST',
+          headers: Auth.getHeaders(),
+          body: JSON.stringify({ url_or_name: input })
+        });
+
+        if (r.ok) {
+          const data = await r.json();
+          document.getElementById('finder-result-card').innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <div style="width:48px; height:48px; background:#f0fdfa; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px;">🏢</div>
+              <div>
+                <h3 style="font-size:18px; font-weight:700; color:#0f172a;">${data.company_name || input}</h3>
+                <p style="font-size:13px; color:#64748b;">${data.industry || 'Technology'}</p>
+              </div>
+              <button onclick="addFinderAsLead('${data.company_name || input}')" class="teal-btn" style="margin-left:auto;">+ Add to Leads</button>
+            </div>
+            <p style="font-size:14px; color:#475569; margin-bottom:16px; line-height:1.6;">${data.description || 'No description available.'}</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;">
+              <div style="background:#f8fafc; border-radius:8px; padding:12px;">
+                <p style="font-size:11px; color:#94a3b8; text-transform:uppercase; font-weight:600;">Industry</p>
+                <p style="font-size:14px; font-weight:500;">${data.industry || 'N/A'}</p>
+              </div>
+              <div style="background:#f8fafc; border-radius:8px; padding:12px;">
+                <p style="font-size:11px; color:#94a3b8; text-transform:uppercase; font-weight:600;">Size</p>
+                <p style="font-size:14px; font-weight:500;">${data.company_size || 'N/A'}</p>
+              </div>
+              <div style="background:#f8fafc; border-radius:8px; padding:12px;">
+                <p style="font-size:11px; color:#94a3b8; text-transform:uppercase; font-weight:600;">Location</p>
+                <p style="font-size:14px; font-weight:500;">${data.location || 'N/A'}</p>
+              </div>
+            </div>
+            ${data.pain_points ? `
+            <div style="margin-bottom:12px;">
+              <p style="font-size:12px; font-weight:600; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Pain Points</p>
+              <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                ${data.pain_points.map(p => '<span class="tag" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">' + p + '</span>').join('')}
+              </div>
+            </div>` : ''}
+            ${data.suggested_approach ? `
+            <div style="background:#f0fdfa; border:1px solid #ccfbf1; border-radius:8px; padding:12px; margin-top:12px;">
+              <p style="font-size:12px; font-weight:600; color:#0d9488; margin-bottom:4px;">💡 Suggested Approach</p>
+              <p style="font-size:13px; color:#475569;">${data.suggested_approach}</p>
+            </div>` : ''}
+          `;
+          document.getElementById('finder-result-card').style.display = 'block';
+        } else {
+          document.getElementById('finder-result-card').innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">Failed to analyze. Please try again.</p>';
+          document.getElementById('finder-result-card').style.display = 'block';
+        }
+      } catch(e) {
+        document.getElementById('finder-result-card').innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">Error: ' + e.message + '</p>';
+        document.getElementById('finder-result-card').style.display = 'block';
+      }
+      document.getElementById('finder-loading').style.display = 'none';
+    }
+
+    async function addFinderAsLead(companyName) {
+      try {
+        await fetch(API_BASE + '/api/leads/', {
+          method: 'POST',
+          headers: Auth.getHeaders(),
+          body: JSON.stringify({ company: companyName, first_name: '', last_name: '', email: '' })
+        });
+        alert('Added ' + companyName + ' as a lead!');
+      } catch(e) { alert('Failed to add lead'); }
+    }
+
+    // ===== Seed Demo Data =====
+    async function seedDemoData() {
+      try {
+        const r = await fetch(API_BASE + '/api/dashboard/seed-demo-data', {
+          method: 'POST',
+          headers: Auth.getHeaders()
+        });
+        const data = await r.json();
+        if (r.ok) {
+          document.getElementById('seed-demo-banner').style.display = 'none';
+          alert('Demo data loaded: ' + data.leads + ' leads, ' + data.campaigns + ' campaigns, ' + data.mailboxes + ' mailboxes');
+          loadDashboardData();
+        } else {
+          alert(data.detail || 'Demo data already loaded');
+          document.getElementById('seed-demo-banner').style.display = 'none';
+        }
+      } catch(e) { alert('Failed to load demo data'); }
+    }
+
+    // ===== People Finder =====
+    async function searchPeople() {
+      const input = document.getElementById('people-finder-input').value.trim();
+      if (!input) return;
+
+      document.getElementById('people-finder-results').style.display = 'block';
+      document.getElementById('people-finder-loading').style.display = 'block';
+      document.getElementById('people-finder-result-card').style.display = 'none';
+
+      try {
+        const r = await fetch(API_BASE + '/api/ai/find-people', {
+          method: 'POST',
+          headers: Auth.getHeaders(),
+          body: JSON.stringify({ company: input })
+        });
+
+        if (r.ok) {
+          const data = await r.json();
+          let contactsHtml = '';
+          if (data.contacts && data.contacts.length > 0) {
+            contactsHtml = data.contacts.map(c => `
+              <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+                  <div style="width:40px; height:40px; background:linear-gradient(135deg,#0d9488,#14b8a6); border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:16px;">${(c.name||'?').charAt(0)}</div>
+                  <div>
+                    <p style="font-size:15px; font-weight:600; color:#0f172a;">${c.name || 'Unknown'}</p>
+                    <p style="font-size:13px; color:#64748b;">${c.title || 'No title'}</p>
+                  </div>
+                  <button onclick="addPersonAsLead('${(c.name||'').replace(/'/g,"\\'")}','${(c.email||'').replace(/'/g,"\\'")}','${input.replace(/'/g,"\\'")}','${(c.title||'').replace(/'/g,"\\'")}')" class="teal-btn" style="margin-left:auto; font-size:12px;">+ Add Lead</button>
+                </div>
+                <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:#64748b;">
+                  ${c.email ? '<span>✉️ ' + c.email + '</span>' : ''}
+                  ${c.linkedin ? '<a href="' + c.linkedin + '" target="_blank" style="color:#0d9488;">LinkedIn →</a>' : ''}
+                </div>
+                ${c.relevance ? '<p style="font-size:12px; color:#94a3b8; margin-top:8px; font-style:italic;">' + c.relevance + '</p>' : ''}
+              </div>
+            `).join('');
+          } else {
+            contactsHtml = '<p style="color:#94a3b8; text-align:center; padding:20px;">No contacts found. Try a different company name.</p>';
+          }
+
+          document.getElementById('people-finder-result-card').innerHTML = `
+            <div style="background:white; border-radius:16px; padding:24px; border:1px solid #e2e8f0; margin-bottom:16px;">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                <div style="width:48px; height:48px; background:#f0fdfa; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px;">👥</div>
+                <div>
+                  <h3 style="font-size:18px; font-weight:700; color:#0f172a;">Contacts at ${data.company || input}</h3>
+                  <p style="font-size:13px; color:#64748b;">${data.contacts ? data.contacts.length + ' contacts found' : '0 contacts found'}</p>
+                </div>
+              </div>
+              ${data.note ? '<p style="font-size:13px; color:#64748b; background:#f8fafc; padding:10px; border-radius:8px;">' + data.note + '</p>' : ''}
+            </div>
+            ${contactsHtml}
+          `;
+          document.getElementById('people-finder-result-card').style.display = 'block';
+        } else {
+          document.getElementById('people-finder-result-card').innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">Failed to search. Please try again.</p>';
+          document.getElementById('people-finder-result-card').style.display = 'block';
+        }
+      } catch(e) {
+        document.getElementById('people-finder-result-card').innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">Error: ' + e.message + '</p>';
+        document.getElementById('people-finder-result-card').style.display = 'block';
+      }
+      document.getElementById('people-finder-loading').style.display = 'none';
+    }
+
+    async function addPersonAsLead(name, email, company, title) {
+      const parts = name.split(' ');
+      const first = parts[0] || '';
+      const last = parts.slice(1).join(' ') || '';
+      try {
+        await fetch(API_BASE + '/api/leads/', {
+          method: 'POST',
+          headers: Auth.getHeaders(),
+          body: JSON.stringify({ first_name: first, last_name: last, email: email || '', company: company, job_title: title })
+        });
+        alert('Added ' + name + ' as a lead!');
+      } catch(e) { alert('Failed to add lead'); }
+    }
+
+    // ===== Init =====
+    function init() {
+      if (Auth.user) {
+        const name = Auth.user.full_name || Auth.user.email || 'User';
+        document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
+        document.getElementById('topbar-name').textContent = name;
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+        document.getElementById('greeting').textContent = `${greeting}, ${name.split(' ')[0]}.`;
+        document.getElementById('settings-firstname').value = Auth.user.full_name ? Auth.user.full_name.split(' ')[0] : '';
+        document.getElementById('settings-lastname').value = Auth.user.full_name ? Auth.user.full_name.split(' ').slice(1).join(' ') : '';
+      }
+
+      const path = window.location.pathname.replace(/^\//, '');
+      if (path && path !== '') appNav(path);
+      else appNav('dashboard');
+
+      loadDashboardData();
+    }
+
+    function showModal(title, body) {
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-body').innerHTML = body;
+      document.getElementById('modal-overlay').style.display = 'flex';
+    }
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+    function showIntTab(tab) {
+      ['ext','api','crm'].forEach(t => {
+        document.getElementById('int-content-' + t).style.display = t === tab ? 'block' : 'none';
+        document.getElementById('int-tab-' + t).className = t === tab ? 'tab-active' : '';
+      });
+    }
+
+    window.addEventListener('popstate', () => {
+      const path = window.location.pathname.replace(/^\//, '');
+      if (path) appNav(path);
+    });
+
+    init();
+  </script>
+</body>
+</html>
