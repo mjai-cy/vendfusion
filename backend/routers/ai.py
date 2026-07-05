@@ -66,7 +66,17 @@ def find_people(
 ):
     from services.gemini_service import find_people_at_company
     result = find_people_at_company(request.company, request.roles)
-    contacts = [PeopleFinderContact(**c) for c in result.get("contacts", [])]
+    contacts = []
+    for c in result.get("contacts", []):
+        contacts.append(PeopleFinderContact(
+            name=str(c.get("name", "") or ""),
+            title=str(c.get("title", "") or ""),
+            email=str(c.get("email", "") or ""),
+            phone=str(c.get("phone", "") or ""),
+            linkedin=str(c.get("linkedin", "") or ""),
+            source=str(c.get("source", "") or ""),
+            relevance=str(c.get("relevance", "") or ""),
+        ))
     return PeopleFinderResponse(
         company=result.get("company", request.company),
         contacts=contacts,

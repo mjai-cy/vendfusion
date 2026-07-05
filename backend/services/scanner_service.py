@@ -212,22 +212,26 @@ def find_people_from_web_and_crm(company_name: str, roles: str = None) -> dict:
 def _search_hubspot_contacts(company_name: str) -> list:
     """Search HubSpot CRM for contacts at a company"""
 
-    from services.hubspot_service import HUBSPOT_PRIVATE_APP_TOKEN, get_headers
+    from services.hubspot_service import HUBSPOT_PRIVATE_APP_TOKEN
 
     if not HUBSPOT_PRIVATE_APP_TOKEN:
         return []
 
     contacts = []
     try:
+        headers = {
+            "Authorization": f"Bearer {HUBSPOT_PRIVATE_APP_TOKEN}",
+            "Content-Type": "application/json"
+        }
         with httpx.Client(timeout=10) as client:
             search_payload = {
                 "query": company_name,
                 "limit": 10,
-                "properties": ["firstname", "lastname", "email", "company", "jobtitle", "phone", "linkedin"],
+                "properties": ["firstname", "lastname", "email", "company", "jobtitle", "phone"],
             }
             resp = client.post(
                 "https://api.hubapi.com/crm/v3/objects/contacts/search",
-                headers=get_headers(),
+                headers=headers,
                 json=search_payload,
             )
 
@@ -242,7 +246,7 @@ def _search_hubspot_contacts(company_name: str) -> list:
                             "title": props.get("jobtitle", ""),
                             "email": email,
                             "phone": props.get("phone", ""),
-                            "linkedin": props.get("linkedin", ""),
+                            "linkedin": "",
                             "source": "HubSpot CRM",
                             "relevance": f"Contact at {props.get('company', company_name)}",
                         })
