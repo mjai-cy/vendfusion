@@ -2,26 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "main.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "dashboard.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "app.js",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "main.py"
+      "dest": "api/index.py"
     },
     {
       "src": "/(.*\\.(html|js|css|svg|png|jpg|ico))",
@@ -29,7 +17,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "main.py"
+      "dest": "api/index.py"
     }
   ]
 }
