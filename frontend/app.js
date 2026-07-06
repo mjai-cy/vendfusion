@@ -928,7 +928,7 @@ function loginWithGoogle() {
     const left = (screen.width - width) / 2;
     const top = (screen.height - height) / 2;
     const popup = window.open("", "GoogleSignIn", `width=${width},height=${height},left=${left},top=${top}`);
-    popup.document.write(\`
+    popup.document.write(`
         <html>
         <head>
             <title>Sign in - Google Accounts</title>
@@ -976,7 +976,7 @@ function loginWithGoogle() {
             </script>
         </body>
         </html>
-    \`);
+    `);
 }
 
 function loginWithMicrosoft() {
@@ -984,8 +984,8 @@ function loginWithMicrosoft() {
     const height = 600;
     const left = (screen.width - width) / 2;
     const top = (screen.height - height) / 2;
-    const popup = window.open("", "MicrosoftSignIn", \`width=\${width},height=\${height},left=\${left},top=\${top}\`);
-    popup.document.write(\`
+    const popup = window.open("", "MicrosoftSignIn", `width=${width},height=${height},left=${left},top=${top}`);
+    popup.document.write(`
         <html>
         <head>
             <title>Sign in to your Microsoft account</title>
@@ -1020,7 +1020,7 @@ function loginWithMicrosoft() {
             </script>
         </body>
         </html>
-    \`);
+    `);
 }
 
 
