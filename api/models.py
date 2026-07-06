@@ -202,3 +202,12 @@ class DashboardStats(BaseModel):
 
 class BulkLeadImport(BaseModel):
     leads: List[LeadCreate]
+
+
+class GoogleLoginRequest(BaseModel):
+    credential: str
+
+
+class MicrosoftLoginRequest(BaseModel):
+    access_token: str
+

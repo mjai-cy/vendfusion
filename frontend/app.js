@@ -95,6 +95,39 @@ const Auth = {
         return await res.json();
     },
 
+    async googleLogin(credential) {
+        const res = await fetch(`${API_BASE}/api/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || 'Google Login failed');
+        }
+        const data = await res.json();
+        const user = data.user || null;
+        this.setAuth(data.access_token, user);
+        return user;
+    },
+
+    async microsoftLogin(accessToken) {
+        const res = await fetch(`${API_BASE}/api/auth/microsoft`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_token: accessToken })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || 'Microsoft Login failed');
+        }
+        const data = await res.json();
+        const user = data.user || null;
+        this.setAuth(data.access_token, user);
+        return user;
+    },
+
+
     updateUI() {
         const authBtns = document.getElementById('auth-buttons');
         const userMenu = document.getElementById('user-menu');
@@ -409,34 +442,7 @@ async function handleRegister(e) {
 
     try {
         await Auth.register(email, password, name, company);
-        showNotification('Registration successful! Please verify your email.');
-        showOTPModal(email, password);
-    } catch (err) {
-        showNotification(err.message, 'error');
-    }
-}
-
-function showOTPModal(email, password) {
-    showModal('Verify Email', `
-        <form onsubmit="handleVerifyOTP(event, '${email}', '${password}')">
-            <div class="space-y-4">
-                <p class="text-sm text-gray-500">We sent a 6-digit code to ${email}</p>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Enter OTP</label>
-                    <input id="verify-otp" type="text" required maxlength="6" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue text-center tracking-widest text-lg font-bold">
-                </div>
-                <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Verify & Login</button>
-            </div>
-        </form>
-    `);
-}
-
-async function handleVerifyOTP(e, email, password) {
-    e.preventDefault();
-    const otp = document.getElementById('verify-otp').value;
-    try {
-        await Auth.verifyOTP(email, otp);
-        showNotification('Email verified!');
+        showNotification('Registration successful! Logging you in...');
         await Auth.login(email, password);
         closeModal();
         window.location.href = '/dashboard';
@@ -444,6 +450,42 @@ async function handleVerifyOTP(e, email, password) {
         showNotification(err.message, 'error');
     }
 }
+
+window.addEventListener('message', async (event) => {
+    if (event.data && event.data.type === 'google-login') {
+        const email = event.data.email;
+        const name = event.data.name;
+        const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+        const payload = btoa(JSON.stringify({ 
+            sub: "mock-google-id-" + Date.now(), 
+            email: email, 
+            name: name, 
+            aud: "mock-client-id", 
+            iss: "https://accounts.google.com" 
+        }));
+        const mockToken = `mock_${header}.${payload}.signature`;
+        
+        try {
+            showNotification('Logging in with Google...');
+            await Auth.googleLogin(mockToken);
+            showNotification('Google Login Successful!');
+            closeModal();
+            window.location.href = '/dashboard';
+        } catch (err) {
+            showNotification(err.message, 'error');
+        }
+    } else if (event.data && event.data.type === 'microsoft-login') {
+        try {
+            showNotification('Logging in with Windows...');
+            await Auth.microsoftLogin("mock_microsoft_token");
+            showNotification('Microsoft Login Successful!');
+            closeModal();
+            window.location.href = '/dashboard';
+        } catch (err) {
+            showNotification(err.message, 'error');
+        }
+    }
+});
 
 function showForgotPasswordModal() {
     showModal('Forgot Password', `
@@ -772,52 +814,215 @@ async function warmupMailbox(id) {
 // ============ Show Forms ============
 function showLoginModal() {
     showModal('Login to VendFusion', `
-        <form onsubmit="handleLogin(event)">
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input id="login-email" type="email" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input id="login-password" type="password" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
-                </div>
-                <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Login</button>
-                <div class="flex items-center justify-between mt-2">
-                    <p class="text-sm text-gray-500">Don't have an account? <a href="#" onclick="showRegisterModal()" class="text-brand-blue font-semibold hover:underline">Sign up</a></p>
-                    <a href="#" onclick="showForgotPasswordModal()" class="text-sm font-medium text-gray-500 hover:text-brand-blue hover:underline">Forgot Password?</a>
-                </div>
+        <div class="space-y-4">
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="loginWithGoogle()" class="flex-1 flex items-center justify-center border border-gray-200 rounded-xl py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C4 20.53 7.7 23 12 23z" fill="#34A853"/>
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 4 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                    </svg>
+                    Google
+                </button>
+                <button type="button" onclick="loginWithMicrosoft()" class="flex-1 flex items-center justify-center border border-gray-200 rounded-xl py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#f35022" d="M0 0h11v11H0z"/>
+                      <path fill="#80bb0a" d="M12 0h11v11H12z"/>
+                      <path fill="#00a1f1" d="M0 12h11v11H0z"/>
+                      <path fill="#ffb900" d="M12 12h11v11H12z"/>
+                    </svg>
+                    Windows
+                </button>
             </div>
-        </form>
+            
+            <div class="relative flex py-1 items-center">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-xs font-medium uppercase">Or email</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input id="login-email" type="email" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input id="login-password" type="password" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                    </div>
+                    <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Login</button>
+                    <div class="flex items-center justify-between mt-2">
+                        <p class="text-sm text-gray-500">Don't have an account? <a href="#" onclick="showRegisterModal()" class="text-brand-blue font-semibold hover:underline">Sign up</a></p>
+                        <a href="#" onclick="showForgotPasswordModal()" class="text-sm font-medium text-gray-500 hover:text-brand-blue hover:underline">Forgot Password?</a>
+                    </div>
+                </div>
+            </form>
+        </div>
     `);
 }
 
 function showRegisterModal() {
-    showModal('Create Account', `
-        <form onsubmit="handleRegister(event)">
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input id="reg-name" type="text" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                    <input id="reg-company" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input id="reg-email" type="email" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input id="reg-password" type="password" required minlength="6" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
-                </div>
-                <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Create Account</button>
-                <p class="text-center text-sm text-gray-500">Already have an account? <a href="#" onclick="showLoginModal()" class="text-brand-blue font-semibold">Login</a></p>
+    showModal('Let\'s get you started for FREE', `
+        <div class="space-y-4">
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="loginWithGoogle()" class="flex-1 flex items-center justify-center border border-gray-200 rounded-xl py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C4 20.53 7.7 23 12 23z" fill="#34A853"/>
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 4 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                    </svg>
+                    Sign up with Google
+                </button>
+                <button type="button" onclick="loginWithMicrosoft()" class="flex-1 flex items-center justify-center border border-gray-200 rounded-xl py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#f35022" d="M0 0h11v11H0z"/>
+                      <path fill="#80bb0a" d="M12 0h11v11H12z"/>
+                      <path fill="#00a1f1" d="M0 12h11v11H0z"/>
+                      <path fill="#ffb900" d="M12 12h11v11H12z"/>
+                    </svg>
+                    Sign up with Windows
+                </button>
             </div>
-        </form>
+            
+            <div class="relative flex py-1 items-center">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-xs font-medium uppercase">Or email</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
+            <form onsubmit="handleRegister(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input id="reg-name" type="text" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                        <input id="reg-company" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input id="reg-email" type="email" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input id="reg-password" type="password" required minlength="6" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                    </div>
+                    
+                    <p class="text-xs text-gray-400 mt-2 text-center">By continuing, you agree to platform's <a href="#" class="underline hover:text-gray-600">Privacy Policy</a> and <a href="#" class="underline hover:text-gray-600">Terms and Conditions</a></p>
+                    
+                    <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Sign up</button>
+                    <p class="text-center text-sm text-gray-500">Already have an account? <a href="#" onclick="showLoginModal()" class="text-brand-blue font-semibold">Login</a></p>
+                </div>
+            </form>
+        </div>
     `);
 }
+
+function loginWithGoogle() {
+    const width = 500;
+    const height = 600;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    const popup = window.open("", "GoogleSignIn", `width=${width},height=${height},left=${left},top=${top}`);
+    popup.document.write(\`
+        <html>
+        <head>
+            <title>Sign in - Google Accounts</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+            <style>
+                body { font-family: 'Roboto', sans-serif; }
+            </style>
+        </head>
+        <body class="bg-gray-50 flex items-center justify-center h-full p-6">
+            <div class="bg-white rounded-lg shadow-md w-full max-w-md p-8 border border-gray-200">
+                <div class="flex flex-col items-center mb-6">
+                    <svg class="w-12 h-12 mb-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C4 20.53 7.7 23 12 23z" fill="#34A853"/>
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 4 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                    </svg>
+                    <h1 class="text-xl font-medium text-gray-900">Sign in with Google</h1>
+                    <p class="text-sm text-gray-500 mt-1">to continue to VendFusion</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <button onclick="selectAccount('mritunjaykumar77639140@gmail.com', 'Mritunjay Kumar')" class="w-full flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold mr-3">MK</div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-700">Mritunjay Kumar</div>
+                            <div class="text-xs text-gray-500">mritunjaykumar77639140@gmail.com</div>
+                        </div>
+                    </button>
+                    <button onclick="selectAccount('demo.google.user@gmail.com', 'Demo Google User')" class="w-full flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+                        <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-semibold mr-3">DU</div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-700">Demo Google User</div>
+                            <div class="text-xs text-gray-500">demo.google.user@gmail.com</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <script>
+                function selectAccount(email, name) {
+                    window.opener.postMessage({ type: 'google-login', email: email, name: name }, '*');
+                    window.close();
+                }
+            </script>
+        </body>
+        </html>
+    \`);
+}
+
+function loginWithMicrosoft() {
+    const width = 500;
+    const height = 600;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    const popup = window.open("", "MicrosoftSignIn", \`width=\${width},height=\${height},left=\${left},top=\${top}\`);
+    popup.document.write(\`
+        <html>
+        <head>
+            <title>Sign in to your Microsoft account</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="bg-gray-100 flex items-center justify-center h-full p-6">
+            <div class="bg-white shadow-md w-full max-w-md p-8 border border-gray-200" style="border-top: 4px solid #00a1f1;">
+                <div class="mb-6">
+                    <svg class="w-8 h-8 mb-4" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#f35022" d="M0 0h11v11H0z"/>
+                      <path fill="#80bb0a" d="M12 0h11v11H12z"/>
+                      <path fill="#00a1f1" d="M0 12h11v11H0z"/>
+                      <path fill="#ffb900" d="M12 12h11v11H12z"/>
+                    </svg>
+                    <h1 class="text-xl font-semibold text-gray-900">Sign in</h1>
+                </div>
+                <div class="space-y-3">
+                    <button onclick="selectAccount('demo.windows.user@outlook.com', 'Demo Windows User')" class="w-full flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold mr-3">WU</div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-700">Demo Windows User</div>
+                            <div class="text-xs text-gray-500">demo.windows.user@outlook.com</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <script>
+                function selectAccount(email, name) {
+                    window.opener.postMessage({ type: 'microsoft-login', email: email, name: name }, '*');
+                    window.close();
+                }
+            </script>
+        </body>
+        </html>
+    \`);
+}
+
 
 function showAddLeadModal() {
     showModal('Add New Lead', `
