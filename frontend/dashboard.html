@@ -52,6 +52,42 @@
     .tab-active { border-bottom: 2px solid #14b8a6; color: #0f172a; font-weight: 600; }
     .dropdown { position: relative; }
     .notif-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; position: absolute; top: -2px; right: -2px; }
+    
+    /* B2B People Finder Layout Styles */
+    .finder-container { display: flex; height: calc(100vh - 120px); background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; position: relative; }
+    .finder-filters { width: 280px; border-right: 1px solid #e2e8f0; background: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    .finder-filters-header { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 14px; color: #0f172a; }
+    .finder-filters-scroll { flex: 1; overflow-y: auto; padding: 12px 16px; }
+    .filter-accordion { border-bottom: 1px solid #f1f5f9; padding: 12px 0; }
+    .filter-accordion-title { font-size: 12px; font-weight: 600; color: #475569; display: flex; align-items: center; justify-content: space-between; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
+    .filter-accordion-content { margin-top: 10px; display: block; }
+    .finder-main { flex: 1; display: flex; flex-direction: column; background: white; min-width: 0; }
+    .finder-table-container { flex: 1; overflow: auto; }
+    .finder-table { width: 100%; border-collapse: collapse; }
+    .finder-table th { background: #f8fafc; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #e2e8f0; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; padding: 12px 14px; }
+    .finder-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: 13px; color: #334155; }
+    .finder-table tr { cursor: pointer; transition: background 0.15s; }
+    .finder-table tr:hover td { background: #f0fdfa/40; }
+    .finder-table tr.selected td { background: #e6fbf7; }
+    .badge-lead { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px; }
+    .badge-get-info { font-size: 11px; font-weight: 600; border-radius: 8px; padding: 4px 10px; transition: all 0.15s; cursor: pointer; }
+    .badge-get-info.email { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .badge-get-info.email:hover { background: #dbeafe; }
+    .badge-get-info.phone { background: #faf5ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+    .badge-get-info.phone:hover { background: #f3e8ff; }
+    
+    /* Sliding right-hand details drawer */
+    .finder-drawer { width: 420px; border-left: 1px solid #e2e8f0; background: white; display: flex; flex-direction: column; flex-shrink: 0; position: absolute; top: 0; right: 0; height: 100%; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50; box-shadow: -4px 0 16px rgba(0,0,0,0.05); }
+    .finder-drawer.open { transform: translateX(0); }
+    .finder-drawer-header { padding: 18px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: flex-start; justify-content: space-between; }
+    .finder-drawer-scroll { flex: 1; overflow-y: auto; padding: 20px; }
+    .drawer-section-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; margin-bottom: 12px; margin-top: 18px; }
+    
+    .timeline-item { position: relative; padding-left: 20px; padding-bottom: 16px; }
+    .timeline-item::before { content: ''; position: absolute; left: 4px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: #14b8a6; }
+    .timeline-item::after { content: ''; position: absolute; left: 7px; top: 14px; bottom: 0; width: 2px; background: #e2e8f0; }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-item:last-child::after { display: none; }
   </style>
 </head>
 <body>
@@ -450,31 +486,197 @@
 
         <!-- ====== FINDER PEOPLE PAGE ====== -->
         <div id="page-finder-people" class="page">
-          <div style="display:flex; gap:16px; margin-bottom:24px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
-            <span style="color:#64748b; cursor:pointer; padding-bottom:8px; font-size:14px;" onclick="appNav('finder-company')">Company Finder</span>
-            <span style="padding-bottom:8px; font-size:14px; font-weight:600; border-bottom:2px solid #14b8a6;">People Finder</span>
+          <!-- Top Tab Navigation -->
+          <div style="display:flex; gap:20px; margin-bottom:16px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+            <span style="color:#64748b; cursor:pointer; font-size:14px; padding-bottom:6px;" onclick="appNav('finder-company')">Company Finder</span>
+            <span style="font-size:14px; font-weight:600; border-bottom:2px solid #14b8a6; padding-bottom:6px; color:#0f172a;">People Finder</span>
+            <span style="color:#94a3b8; font-size:14px; padding-bottom:6px;">Job Finder</span>
+            <span style="color:#94a3b8; font-size:14px; padding-bottom:6px;">Local Business</span>
           </div>
-          <div style="background:white; border-radius:16px; padding:24px; margin-bottom:24px; border:1px solid #e2e8f0;">
-            <p style="font-size:14px; color:#0d9488; font-weight:500; margin-bottom:16px;">Enter a company name to find key decision makers and contacts.</p>
-            <div style="display:flex; gap:12px; align-items:center;">
-              <div style="flex:1; position:relative;">
-                <svg style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input id="people-finder-input" placeholder="e.g. TechCorp India or FinServe Solutions" style="border:2px solid #e2e8f0; border-radius:12px; padding:14px 16px 14px 40px; font-size:14px; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.06); outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#14b8a6'" onblur="this.style.borderColor='#e2e8f0'" />
+
+          <!-- Finder Workspace Container -->
+          <div class="finder-container">
+            <!-- Left Filters Sidebar -->
+            <div class="finder-filters">
+              <div class="finder-filters-header">
+                <span>⚡ Active Filters</span>
+                <a href="#" onclick="clearPeopleFilters(event)" style="font-size:12px; color:#14b8a6; font-weight:500;">Clear All</a>
               </div>
-              <button onclick="searchPeople()" style="background:linear-gradient(135deg,#0d9488,#14b8a6); color:white; border:none; border-radius:12px; padding:14px 28px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(13,148,136,0.3);">Find People</button>
+              <div class="finder-filters-scroll">
+                <div class="filter-accordion">
+                  <div class="filter-accordion-title">
+                    <span>Job Title</span>
+                    <span>▾</span>
+                  </div>
+                  <div class="filter-accordion-content">
+                    <input id="filter-title" placeholder="e.g. Founder, CEO, Sales" style="border:1px solid #e2e8f0; border-radius:6px; padding:6px 10px; font-size:12px; width:100%;" />
+                  </div>
+                </div>
+
+                <div class="filter-accordion">
+                  <div class="filter-accordion-title">
+                    <span>Seniority</span>
+                    <span>▾</span>
+                  </div>
+                  <div class="filter-accordion-content" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                    <label class="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" class="filter-seniority" value="Owner / Partner"> Owner / Partner</label>
+                    <label class="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" class="filter-seniority" value="Director"> Director</label>
+                    <label class="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" class="filter-seniority" value="Manager"> Manager</label>
+                    <label class="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" class="filter-seniority" value="VP"> VP</label>
+                  </div>
+                </div>
+
+                <div class="filter-accordion">
+                  <div class="filter-accordion-title">
+                    <span>Industry</span>
+                    <span>▾</span>
+                  </div>
+                  <div class="filter-accordion-content">
+                    <select id="filter-industry" style="border:1px solid #e2e8f0; border-radius:6px; padding:6px 10px; font-size:12px; width:100%;">
+                      <option value="">All Industries</option>
+                      <option value="Information Services">Information Services</option>
+                      <option value="Higher Education">Higher Education</option>
+                      <option value="Technology">Technology</option>
+                      <option value="Software Development">Software Development</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="filter-accordion">
+                  <div class="filter-accordion-title">
+                    <span>Person Location</span>
+                    <span>▾</span>
+                  </div>
+                  <div class="filter-accordion-content">
+                    <input id="filter-location" placeholder="e.g. London, Switzerland" style="border:1px solid #e2e8f0; border-radius:6px; padding:6px 10px; font-size:12px; width:100%;" />
+                  </div>
+                </div>
+
+                <button onclick="applyPeopleFilters()" class="teal-btn" style="width:100%; margin-top:16px; font-size:12px; padding:10px 0;">Apply Filters</button>
+              </div>
             </div>
-            <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('people-finder-input').value='TechCorp India'; searchPeople();">TechCorp India</button>
-              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('people-finder-input').value='FinServe Solutions'; searchPeople();">FinServe Solutions</button>
-              <button class="outline-btn" style="font-size:12px;" onclick="document.getElementById('people-finder-input').value='CloudWare Systems'; searchPeople();">CloudWare Systems</button>
+
+            <!-- Central Prospects Grid -->
+            <div class="finder-main">
+              <div style="padding:14px 16px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; background:#fafafa;">
+                <div style="font-size:13px; color:#475569; font-weight:500;">
+                  👥 <span id="filtered-count">25</span> people of 255K
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="outline-btn" style="font-size:12px; padding:4px 10px;">Select All</button>
+                  <button class="outline-btn" style="font-size:12px; padding:4px 10px;">Export</button>
+                </div>
+              </div>
+
+              <div class="finder-table-container">
+                <table class="finder-table">
+                  <thead>
+                    <tr>
+                      <th style="width:40px;"><input type="checkbox"></th>
+                      <th>Name</th>
+                      <th>Company</th>
+                      <th>Location</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Lists</th>
+                      <th>Skills</th>
+                      <th>Exp</th>
+                    </tr>
+                  </thead>
+                  <tbody id="prospects-table-body">
+                    <!-- Loaded dynamically via javascript -->
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-          <div id="people-finder-results" style="display:none;">
-            <div id="people-finder-loading" style="text-align:center; padding:40px; display:none;">
-              <div style="width:40px; height:40px; border:3px solid #e2e8f0; border-top-color:#14b8a6; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px;"></div>
-              <p style="color:#64748b; font-size:14px;">Searching for key contacts...</p>
+
+            <!-- Sliding Right Details Panel (Offscreen Drawer) -->
+            <div id="finder-drawer" class="finder-drawer">
+              <!-- Header info card -->
+              <div class="finder-drawer-header">
+                <div style="display:flex; gap:12px; align-items:center; flex:1;">
+                  <div id="drawer-avatar" style="width:48px; height:48px; border-radius:50%; background:#14b8a6; color:white; font-size:20px; font-weight:700; display:flex; align-items:center; justify-content:center;">MK</div>
+                  <div style="flex:1;">
+                    <h3 id="drawer-name" style="font-size:16px; font-weight:700; color:#0f172a; line-height:1.2;">Mritunjay Kumar</h3>
+                    <p id="drawer-title" style="font-size:12px; color:#64748b; margin-top:2px;">Sales Director</p>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                  <button onclick="closeFinderDrawer()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer;">×</button>
+                  <button id="drawer-add-btn" class="teal-btn" style="font-size:11px; padding:5px 10px;">+ Add to list</button>
+                </div>
+              </div>
+
+              <!-- Drawer detail lists -->
+              <div class="finder-drawer-scroll">
+                <!-- Profession Card -->
+                <div class="drawer-section-title">Profession</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:12px;">
+                  <div>
+                    <span style="color:#94a3b8;">Title:</span>
+                    <p id="drawer-prof-title" style="font-weight:500; color:#334155;"></p>
+                  </div>
+                  <div>
+                    <span style="color:#94a3b8;">Company:</span>
+                    <p id="drawer-prof-company" style="font-weight:500; color:#334155;"></p>
+                  </div>
+                  <div>
+                    <span style="color:#94a3b8;">Location:</span>
+                    <p id="drawer-prof-location" style="font-weight:500; color:#334155;"></p>
+                  </div>
+                  <div>
+                    <span style="color:#94a3b8;">Seniority:</span>
+                    <p id="drawer-prof-seniority" style="font-weight:500; color:#334155;"></p>
+                  </div>
+                  <div>
+                    <span style="color:#94a3b8;">Tenure:</span>
+                    <p id="drawer-prof-tenure" style="font-weight:500; color:#334155;"></p>
+                  </div>
+                  <div>
+                    <span style="color:#94a3b8;">Experience:</span>
+                    <p id="drawer-prof-exp" style="font-weight:500; color:#334155;"></p>
+                  </div>
+                </div>
+
+                <!-- Contact Info Card -->
+                <div class="drawer-section-title">Contact</div>
+                <div style="font-size:12px; display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:#94a3b8;">Email:</span>
+                    <div id="drawer-email-area" style="font-weight:500;"></div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:#94a3b8;">Phone:</span>
+                    <div id="drawer-phone-area" style="font-weight:500;"></div>
+                  </div>
+                </div>
+
+                <!-- Experience Timeline -->
+                <div class="drawer-section-title">Experience</div>
+                <div id="drawer-experience-timeline" style="font-size:12px;"></div>
+
+                <!-- Education Details -->
+                <div class="drawer-section-title">Education</div>
+                <div id="drawer-education-area" style="font-size:12px;"></div>
+
+                <!-- Skills tags -->
+                <div class="drawer-section-title">Skills</div>
+                <div id="drawer-skills-area" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+
+                <!-- Social & Signals -->
+                <div class="drawer-section-title">Signals</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:12px;">
+                  <div>
+                    <span style="color:#94a3b8;">LinkedIn Connections:</span>
+                    <p id="drawer-sig-connections" style="font-weight:500; color:#334155;"></p>
+                  </div>
+                  <div>
+                    <span style="color:#94a3b8;">Followers:</span>
+                    <p id="drawer-sig-followers" style="font-weight:500; color:#334155;"></p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div id="people-finder-result-card" style="display:none;"></div>
           </div>
         </div>
 
@@ -1030,7 +1232,9 @@
       if (page.startsWith('unibox-')) document.getElementById('unibox-sub').style.display = 'block';
       if (page.startsWith('crm-')) document.getElementById('crm-sub').style.display = 'block';
       if (page.startsWith('reports-')) document.getElementById('reports-sub').style.display = 'block';
-
+      if (page === 'finder-people') {
+        renderProspectsGrid(peopleProspects);
+      }
       window.history.pushState({}, '', '/' + page);
     }
 
@@ -1187,89 +1391,481 @@
       } catch(e) { alert('Failed to load demo data'); }
     }
 
-    // ===== People Finder =====
-    async function searchPeople() {
-      const input = document.getElementById('people-finder-input').value.trim();
-      if (!input) return;
-
-      document.getElementById('people-finder-results').style.display = 'block';
-      document.getElementById('people-finder-loading').style.display = 'block';
-      document.getElementById('people-finder-result-card').style.display = 'none';
-
-      try {
-        const r = await fetch(API_BASE + '/api/ai/find-people', {
-          method: 'POST',
-          headers: Auth.getHeaders(),
-          body: JSON.stringify({ company: input })
-        });
-
-        if (r.ok) {
-          const data = await r.json();
-          let contactsHtml = '';
-          if (data.contacts && data.contacts.length > 0) {
-            contactsHtml = data.contacts.map(c => `
-              <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:12px;">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-                  <div style="width:40px; height:40px; background:linear-gradient(135deg,#0d9488,#14b8a6); border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:16px;">${(c.name||'?').charAt(0).toUpperCase()}</div>
-                  <div style="flex:1;">
-                    <p style="font-size:15px; font-weight:600; color:#0f172a;">${c.name || 'Unknown'}</p>
-                    <p style="font-size:13px; color:#64748b;">${c.title || 'No title'}</p>
-                  </div>
-                  <button onclick="addPersonAsLead('${(c.name||'').replace(/'/g,"\\'")}','${(c.email||'').replace(/'/g,"\\'")}','${input.replace(/'/g,"\\'")}','${(c.title||'').replace(/'/g,"\\'")}')" class="teal-btn" style="margin-left:auto; font-size:12px;">+ Add Lead</button>
-                </div>
-                <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:#64748b;">
-                  ${c.email ? '<span>✉️ ' + c.email + '</span>' : ''}
-                  ${c.phone ? '<span>📞 ' + c.phone + '</span>' : ''}
-                  ${c.linkedin ? '<a href="' + c.linkedin + '" target="_blank" style="color:#0d9488;">LinkedIn →</a>' : ''}
-                  ${c.source ? '<span style="background:#f1f5f9; padding:2px 8px; border-radius:4px; font-size:11px;">' + c.source + '</span>' : ''}
-                </div>
-                ${c.relevance ? '<p style="font-size:12px; color:#94a3b8; margin-top:8px; font-style:italic;">' + c.relevance + '</p>' : ''}
-              </div>
-            `).join('');
-          } else {
-            contactsHtml = '<p style="color:#94a3b8; text-align:center; padding:20px;">No contacts found. Try a different company name.</p>';
-          }
-
-          document.getElementById('people-finder-result-card').innerHTML = `
-            <div style="background:white; border-radius:16px; padding:24px; border:1px solid #e2e8f0; margin-bottom:16px;">
-              <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-                <div style="width:48px; height:48px; background:#f0fdfa; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px;">👥</div>
-                <div>
-                  <h3 style="font-size:18px; font-weight:700; color:#0f172a;">Contacts at ${data.company || input}</h3>
-                  <p style="font-size:13px; color:#64748b;">${data.contacts ? data.contacts.length + ' contacts found' : '0 contacts found'}</p>
-                </div>
-              </div>
-              ${data.note ? '<p style="font-size:13px; color:#64748b; background:#f8fafc; padding:10px; border-radius:8px;">' + data.note + '</p>' : ''}
-            </div>
-            ${contactsHtml}
-          `;
-          document.getElementById('people-finder-result-card').style.display = 'block';
-        } else if (r.status === 401) {
-          Auth.logout();
-        } else {
-          const err = await r.json().catch(() => ({}));
-          document.getElementById('people-finder-result-card').innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">' + (err.detail || 'Failed to search. Please try again.') + '</p>';
-          document.getElementById('people-finder-result-card').style.display = 'block';
-        }
-      } catch(e) {
-        document.getElementById('people-finder-result-card').innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">Error: ' + e.message + '</p>';
-        document.getElementById('people-finder-result-card').style.display = 'block';
+    // ===== B2B People Finder Interactive Engine =====
+    const peopleProspects = [
+      {
+        name: "Al Sikkema",
+        title: "Co-Founder",
+        company: "NUI Verification Services Inc.",
+        location: "London, Ontario, Canada",
+        email: "al.sikkema@nuiverify.com",
+        phone: "+1 519 555 0192",
+        industry: "Information Services",
+        seniority: "Owner / Partner",
+        skills: ["Verification Services", "Compliance", "Security"],
+        exp: "More than 10 years",
+        tenure: "15 years",
+        connections: "320",
+        followers: "410",
+        history: [{ title: "Co-Founder", company: "NUI Verification Services Inc.", period: "2009 - Present", current: true }],
+        education: { school: "Western University", degree: "Bachelor of Arts", year: "2005" }
+      },
+      {
+        name: "Andrew 'Flip' Filipowski",
+        title: "Co-Founder, Co-Chairman & Co-CEO",
+        company: "Fluree, PBC",
+        location: "Winston-Salem, North Carolina",
+        email: "flip@flur.ee",
+        phone: "+1 336 555 0147",
+        industry: "Higher Education",
+        seniority: "Owner / Partner",
+        skills: ["Cryptocurrency Expert", "Public Speaking", "Bitcoin", "+47"],
+        exp: "More than 10 years",
+        tenure: "18 years",
+        connections: "4.2K",
+        followers: "5.8K",
+        history: [{ title: "Co-CEO & Co-Chairman", company: "Fluree, PBC", period: "2016 - Present", current: true }],
+        education: { school: "University of Illinois", degree: "Doctor of Humane Letters (Hon.)", year: "1998" }
+      },
+      {
+        name: "Jean-Claude Marchand",
+        title: "Co-Founder",
+        company: "Bid4Ad - The Advertising Marketplace",
+        location: "Zurich, Switzerland",
+        email: "jc.marchand@bid4ad.ch",
+        phone: "+41 44 555 0199",
+        industry: "Information Services",
+        seniority: "Owner / Partner",
+        skills: ["New Media", "Public Relations", "E-commerce", "+17"],
+        exp: "More than 10 years",
+        tenure: "12 years",
+        connections: "890",
+        followers: "1.1K",
+        history: [{ title: "Co-Founder", company: "Bid4Ad - The Advertising Marketplace", period: "2012 - Present", current: true }],
+        education: { school: "ETH Zurich", degree: "Master of Science in Media Technology", year: "2002" }
+      },
+      {
+        name: "Rich Lee",
+        title: "CEO, Co-founder",
+        company: "iPosi, Inc.",
+        location: "Denver, Colorado, USA",
+        email: "rlee@iposi.com",
+        phone: "+1 303 555 0182",
+        industry: "Information Services",
+        seniority: "Owner / Partner",
+        skills: ["Start-ups", "Wireless", "Mobile Devices", "+17"],
+        exp: "More than 10 years",
+        tenure: "16 years",
+        connections: "1.2K",
+        followers: "1.4K",
+        history: [{ title: "CEO & Co-founder", company: "iPosi, Inc.", period: "2010 - Present", current: true }],
+        education: { school: "University of Colorado Boulder", degree: "BS Electrical Engineering", year: "1994" }
+      },
+      {
+        name: "Pierluigi Pierallini",
+        title: "Founder and Chairman of the board",
+        company: "Akeron Srl",
+        location: "Lucca, Tuscany, Italy",
+        email: "pierluigi.pierallini@akeron.it",
+        phone: "+39 0583 15284",
+        industry: "Software Development",
+        seniority: "Owner / Partner",
+        skills: ["Performance Management", "Budgeting", "Financial Planning", "+8"],
+        exp: "More than 10 years",
+        tenure: "25+ Years",
+        connections: "584",
+        followers: "617",
+        history: [
+          { title: "Founder and Chairman of the board", company: "Akeron Srl", period: "Feb 1986 - Present", current: true },
+          { title: "Management Consultant", company: "Freelance consultant", period: "Jan 1977 - Jun 1984" },
+          { title: "Resp. della progettazione e restructuring factory", company: "Piaggio Group", period: "Sep 1970 - Mar 1977" }
+        ],
+        education: { school: "Università di Pisa", degree: "Bachelor of Engineering (B.E.), Mechanical Engineering", year: "1964" }
+      },
+      {
+        name: "Christian Waldvogel",
+        title: "Founder",
+        company: "spherene",
+        location: "Zurich, Switzerland",
+        email: "christian@spherene.com",
+        phone: "+41 43 555 0144",
+        industry: "Software Development",
+        seniority: "Owner / Partner",
+        skills: ["Photography", "Rendering", "Art", "+5"],
+        exp: "More than 10 years",
+        tenure: "11 years",
+        connections: "610",
+        followers: "780",
+        history: [{ title: "Founder", company: "spherene", period: "2013 - Present", current: true }],
+        education: { school: "Zürich University of the Arts", degree: "Bachelor of Fine Arts", year: "2000" }
+      },
+      {
+        name: "Steve Thomas",
+        title: "Co-Founder",
+        company: "Reliable Insights",
+        location: "Manchester Area, United Kingdom",
+        email: "steve.thomas@reliableinsights.co.uk",
+        phone: "+44 161 555 0177",
+        industry: "Information Services",
+        seniority: "Owner / Partner",
+        skills: ["Sales", "Marketing", "Pricing", "+17"],
+        exp: "More than 10 years",
+        tenure: "14 years",
+        connections: "540",
+        followers: "710",
+        history: [{ title: "Co-Founder", company: "Reliable Insights", period: "2010 - Present", current: true }],
+        education: { school: "University of Manchester", degree: "BS Marketing", year: "2004" }
+      },
+      {
+        name: "Ari Sonesh",
+        title: "Founder and CEO",
+        company: "Meditel360",
+        location: "Melville, New York",
+        email: "ari@meditel360.com",
+        phone: "+1 631 555 0134",
+        industry: "Software Development",
+        seniority: "Owner / Partner",
+        skills: ["VoIP", "Call Center", "Cloud Computing", "+22"],
+        exp: "More than 10 years",
+        tenure: "19 years",
+        connections: "2.1K",
+        followers: "2.8K",
+        history: [{ title: "Founder & CEO", company: "Meditel360", period: "2007 - Present", current: true }],
+        education: { school: "New York University", degree: "Master of Science in Telecoms", year: "1992" }
+      },
+      {
+        name: "Steve Deal",
+        title: "Founder & Chairman",
+        company: "Indyme Solutions",
+        location: "San Diego, California",
+        email: "sdeal@indyme.com",
+        phone: "+1 858 555 0112",
+        industry: "Information Services",
+        seniority: "Owner / Partner",
+        skills: ["Manufacturing", "Start-ups", "Strategic Partnerships", "+11"],
+        exp: "More than 10 years",
+        tenure: "25+ Years",
+        connections: "990",
+        followers: "1.2K",
+        history: [{ title: "Founder & Chairman", company: "Indyme Solutions", period: "1999 - Present", current: true }],
+        education: { school: "San Diego State University", degree: "BS Business Administration", year: "1988" }
+      },
+      {
+        name: "Dave Thomas",
+        title: "Founder and CEO",
+        company: "Bedarra Research Labs",
+        location: "Canada",
+        email: "dave@bedarra.com",
+        phone: "+1 613 555 0195",
+        industry: "Higher Education",
+        seniority: "Owner / Partner",
+        skills: ["Start-up Ventures", "Start-up Leadership", "Business Ownership", "+22"],
+        exp: "More than 10 years",
+        tenure: "20 years",
+        connections: "1.4K",
+        followers: "1.9K",
+        history: [{ title: "Founder & CEO", company: "Bedarra Research Labs", period: "2004 - Present", current: true }],
+        education: { school: "Carleton University", degree: "BS Computer Science", year: "1983" }
+      },
+      {
+        name: "Neil Levin",
+        title: "Co-Founder and Vice President",
+        company: "Webline Designs, Inc",
+        location: "Lake Worth, Florida, USA",
+        email: "neil@weblinedesigns.com",
+        phone: "+1 561 555 0155",
+        industry: "Technology",
+        seniority: "Owner / Partner",
+        skills: ["Social Media", "SEO", "Mobile Applications", "+17"],
+        exp: "More than 10 years",
+        tenure: "15 years",
+        connections: "1.1K",
+        followers: "1.3K",
+        history: [{ title: "Co-Founder & VP", company: "Webline Designs, Inc", period: "2009 - Present", current: true }],
+        education: { school: "Florida Atlantic University", degree: "Bachelor of Business Admin", year: "2000" }
+      },
+      {
+        name: "Gennaro Brooks-Church",
+        title: "Founder",
+        company: "Cazimir.com",
+        location: "United States",
+        email: "gennaro@cazimir.com",
+        phone: "+1 718 555 0188",
+        industry: "Technology",
+        seniority: "Owner / Partner",
+        skills: ["AI Compliance", "Data Privacy", "Personal Data Protection Act", "+12"],
+        exp: "More than 10 years",
+        tenure: "14 years",
+        connections: "640",
+        followers: "750",
+        history: [{ title: "Founder", company: "Cazimir.com", period: "2010 - Present", current: true }],
+        education: { school: "Columbia University", degree: "BA Philosophy", year: "2002" }
       }
-      document.getElementById('people-finder-loading').style.display = 'none';
+    ];
+
+    // Track active state lists
+    let revealedEmails = {};
+    let revealedPhones = {};
+    let addedLeads = {};
+    let selectedProspectIndex = -1;
+
+    function renderProspectsGrid(dataToRender) {
+      const tbody = document.getElementById('prospects-table-body');
+      tbody.innerHTML = '';
+      document.getElementById('filtered-count').textContent = dataToRender.length;
+
+      if (dataToRender.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px; color:#94a3b8;">No matching prospects found. Adjust your filters.</td></tr>`;
+        return;
+      }
+
+      dataToRender.forEach((item, index) => {
+        const globalIndex = peopleProspects.findIndex(p => p.email === item.email);
+        const inList = addedLeads[item.email] ? true : false;
+        
+        const isEmailRevealed = revealedEmails[item.email];
+        const isPhoneRevealed = revealedPhones[item.email];
+
+        const tr = document.createElement('tr');
+        if (selectedProspectIndex === globalIndex) tr.classList.add('selected');
+        
+        tr.onclick = (e) => {
+          if (e.target.closest('button') || e.target.closest('input')) return;
+          selectProspect(globalIndex);
+        };
+
+        tr.innerHTML = `
+          <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="width:28px; height:28px; border-radius:50%; background:#e0f2fe; color:#0369a1; font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center;">
+                ${item.name.charAt(0)}
+              </div>
+              <div>
+                <p style="font-weight:600; color:#0f172a;">${item.name}</p>
+                <p style="font-size:11px; color:#64748b;">${item.title}</p>
+              </div>
+            </div>
+          </td>
+          <td style="font-weight:500;">${item.company}</td>
+          <td>${item.location}</td>
+          <td>
+            ${isEmailRevealed ? `
+              <span class="badge-lead" style="font-size:11px; font-weight:500;">
+                ${item.email} <span style="color:#22c55e;">● Verified</span>
+              </span>
+            ` : `
+              <button onclick="revealEmail(event, ${globalIndex})" class="badge-get-info email">✉ Get email</button>
+            `}
+          </td>
+          <td>
+            ${isPhoneRevealed ? `
+              <span style="font-family:monospace; font-size:12px; color:#334155;">${item.phone}</span>
+            ` : `
+              <button onclick="revealPhone(event, ${globalIndex})" class="badge-get-info phone">📞 Get phone</button>
+            `}
+          </td>
+          <td>
+            ${inList ? `
+              <span class="badge-lead">My Leads</span>
+            ` : `
+              <span style="color:#94a3b8; font-style:italic;">-</span>
+            `}
+          </td>
+          <td>
+            <div style="display:flex; gap:4px; max-width:180px; overflow:hidden; white-space:nowrap;">
+              ${item.skills.slice(0, 2).map(s => `<span class="tag" style="background:#f1f5f9; color:#475569; font-size:10px; padding:1px 6px;">${s}</span>`).join('')}
+              ${item.skills.length > 2 ? `<span class="tag" style="background:#f1f5f9; color:#94a3b8; font-size:10px; padding:1px 6px;">+${item.skills.length - 2}</span>` : ''}
+            </div>
+          </td>
+          <td style="font-size:12px; color:#64748b;">${item.exp}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
-    async function addPersonAsLead(name, email, company, title) {
-      const parts = name.split(' ');
+    function selectProspect(index) {
+      selectedProspectIndex = index;
+      const item = peopleProspects[index];
+      if (!item) return;
+
+      // Update grid selection highlights
+      document.querySelectorAll('.finder-table tr').forEach((tr, trIdx) => {
+        if (trIdx === 0) return; // skip header
+        tr.classList.remove('selected');
+      });
+      // Re-render table slightly to preserve visual click feedback
+      renderProspectsGrid(getCurrentFilteredProspects());
+
+      // Open drawer
+      const drawer = document.getElementById('finder-drawer');
+      drawer.classList.add('open');
+
+      // Populate elements
+      document.getElementById('drawer-avatar').textContent = item.name.charAt(0).toUpperCase();
+      document.getElementById('drawer-name').textContent = item.name;
+      document.getElementById('drawer-title').textContent = `${item.title} at ${item.company}`;
+
+      // Profession
+      document.getElementById('drawer-prof-title').textContent = item.title;
+      document.getElementById('drawer-prof-company').textContent = item.company;
+      document.getElementById('drawer-prof-location').textContent = item.location;
+      document.getElementById('drawer-prof-seniority').textContent = item.seniority;
+      document.getElementById('drawer-prof-tenure').textContent = item.tenure;
+      document.getElementById('drawer-prof-exp').textContent = item.exp;
+
+      // Contact info
+      const emailArea = document.getElementById('drawer-email-area');
+      if (revealedEmails[item.email]) {
+        emailArea.innerHTML = `<span class="badge-lead">${item.email} <span style="color:#22c55e;">● Verified</span></span>`;
+      } else {
+        emailArea.innerHTML = `<button onclick="revealEmail(event, ${index})" class="badge-get-info email">✉ Get email</button>`;
+      }
+
+      const phoneArea = document.getElementById('drawer-phone-area');
+      if (revealedPhones[item.email]) {
+        phoneArea.innerHTML = `<span style="font-family:monospace;">${item.phone}</span>`;
+      } else {
+        phoneArea.innerHTML = `<button onclick="revealPhone(event, ${index})" class="badge-get-info phone">📞 Get phone</button>`;
+      }
+
+      // Experience timeline
+      const timeline = document.getElementById('drawer-experience-timeline');
+      timeline.innerHTML = item.history.map(h => `
+        <div class="timeline-item">
+          <p style="font-weight:600; color:#0f172a;">${h.title} ${h.current ? '<span style="background:#ccfbf1; color:#0d9488; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:4px;">Current</span>' : ''}</p>
+          <p style="color:#64748b; font-size:11px;">${h.company} · ${h.period}</p>
+        </div>
+      `).join('');
+
+      // Education
+      const edu = document.getElementById('drawer-education-area');
+      if (item.education) {
+        edu.innerHTML = `
+          <p style="font-weight:600; color:#0f172a;">${item.education.school}</p>
+          <p style="color:#64748b; font-size:11px;">${item.education.degree} · ${item.education.year}</p>
+        `;
+      } else {
+        edu.innerHTML = '<p style="color:#94a3b8; font-style:italic;">No education details listed</p>';
+      }
+
+      // Skills
+      const skills = document.getElementById('drawer-skills-area');
+      skills.innerHTML = item.skills.map(s => `<span class="tag" style="background:#f1f5f9; color:#334155; font-size:11px; margin-bottom:4px;">${s}</span>`).join('');
+
+      // Signals
+      document.getElementById('drawer-sig-connections').textContent = item.connections;
+      document.getElementById('drawer-sig-followers').textContent = item.followers;
+
+      // Add to list button setup
+      const btn = document.getElementById('drawer-add-btn');
+      if (addedLeads[item.email]) {
+        btn.textContent = "✓ Added to Leads";
+        btn.style.background = "#e2e8f0";
+        btn.style.color = "#64748b";
+        btn.disabled = true;
+      } else {
+        btn.textContent = "+ Add to list";
+        btn.style.background = "#14b8a6";
+        btn.style.color = "white";
+        btn.disabled = false;
+        btn.onclick = () => saveProspectAsLead(index);
+      }
+    }
+
+    function closeFinderDrawer() {
+      selectedProspectIndex = -1;
+      document.getElementById('finder-drawer').classList.remove('open');
+      renderProspectsGrid(getCurrentFilteredProspects());
+    }
+
+    function revealEmail(e, index) {
+      if (e) e.stopPropagation();
+      const item = peopleProspects[index];
+      revealedEmails[item.email] = true;
+      renderProspectsGrid(getCurrentFilteredProspects());
+      if (selectedProspectIndex === index) selectProspect(index);
+    }
+
+    function revealPhone(e, index) {
+      if (e) e.stopPropagation();
+      const item = peopleProspects[index];
+      revealedPhones[item.email] = true;
+      renderProspectsGrid(getCurrentFilteredProspects());
+      if (selectedProspectIndex === index) selectProspect(index);
+    }
+
+    async function saveProspectAsLead(index) {
+      const item = peopleProspects[index];
+      if (!item) return;
+
+      const parts = item.name.split(' ');
       const first = parts[0] || '';
       const last = parts.slice(1).join(' ') || '';
+
       try {
-        await fetch(API_BASE + '/api/leads/', {
+        const res = await fetch(API_BASE + '/api/leads/', {
           method: 'POST',
           headers: Auth.getHeaders(),
-          body: JSON.stringify({ first_name: first, last_name: last, email: email || '', company: company, job_title: title })
+          body: JSON.stringify({
+            first_name: first,
+            last_name: last,
+            email: item.email,
+            company: item.company,
+            job_title: item.title,
+            is_qualified: true,
+            source: "People Finder"
+          })
         });
-        alert('Added ' + name + ' as a lead!');
-      } catch(e) { alert('Failed to add lead'); }
+
+        if (res.ok) {
+          addedLeads[item.email] = true;
+          // Refresh grid views and detailed panel
+          renderProspectsGrid(getCurrentFilteredProspects());
+          if (selectedProspectIndex === index) selectProspect(index);
+          
+          // Trigger a silent update of dashboard stats in the background
+          loadDashboardData();
+          alert(`Successfully saved ${item.name} to Leads!`);
+        } else {
+          alert('Lead already added or error occurred.');
+        }
+      } catch(err) {
+        alert('Failed to connect to API server.');
+      }
+    }
+
+    function getCurrentFilteredProspects() {
+      const titleQuery = document.getElementById('filter-title').value.toLowerCase().trim();
+      const industryQuery = document.getElementById('filter-industry').value;
+      const locationQuery = document.getElementById('filter-location').value.toLowerCase().trim();
+
+      const selectedSeniorities = [];
+      document.querySelectorAll('.filter-seniority:checked').forEach(cb => {
+        selectedSeniorities.push(cb.value);
+      });
+
+      return peopleProspects.filter(p => {
+        if (titleQuery && !p.title.toLowerCase().includes(titleQuery) && !p.name.toLowerCase().includes(titleQuery)) return false;
+        if (industryQuery && p.industry !== industryQuery) return false;
+        if (locationQuery && !p.location.toLowerCase().includes(locationQuery)) return false;
+        if (selectedSeniorities.length > 0 && !selectedSeniorities.includes(p.seniority)) return false;
+        return true;
+      });
+    }
+
+    function applyPeopleFilters() {
+      const filtered = getCurrentFilteredProspects();
+      renderProspectsGrid(filtered);
+    }
+
+    function clearPeopleFilters(e) {
+      if (e) e.preventDefault();
+      document.getElementById('filter-title').value = '';
+      document.getElementById('filter-industry').value = '';
+      document.getElementById('filter-location').value = '';
+      document.querySelectorAll('.filter-seniority').forEach(cb => cb.checked = false);
+      renderProspectsGrid(peopleProspects);
     }
 
     // ===== Init =====
