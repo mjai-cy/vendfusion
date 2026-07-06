@@ -99,3 +99,37 @@ Best regards,
 """
 
     return send_email(to_email, subject, body, from_email)
+
+
+def send_verification_otp(to_email: str, otp: str):
+    """Sends the 6-digit verification OTP during signup."""
+    subject = "Verify your VendFusion Account"
+    body = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Welcome to VendFusion!</h2>
+        <p>Thank you for signing up. To complete your registration, please enter the following verification code:</p>
+        <h1 style="color: #4CAF50; letter-spacing: 2px;">{otp}</h1>
+        <p>This code will expire in 10 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      </body>
+    </html>
+    """
+    return send_email(to_email, subject, body, is_html=True)
+
+
+def send_password_reset_token(to_email: str, token: str):
+    """Sends a password reset token/link."""
+    subject = "Reset your VendFusion Password"
+    body = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Password Reset Request</h2>
+        <p>You recently requested to reset your password for your VendFusion account.</p>
+        <p>Use the following token to reset your password:</p>
+        <h3 style="background-color: #f4f4f4; padding: 10px; display: inline-block; border-radius: 4px;">{token}</h3>
+        <p>If you did not request a password reset, please ignore this email.</p>
+      </body>
+    </html>
+    """
+    return send_email(to_email, subject, body, is_html=True)

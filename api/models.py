@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     full_name: Optional[str]
     company_name: Optional[str]
     is_active: bool
+    is_verified: bool = False
     created_at: datetime
 
     class Config:
@@ -30,6 +31,20 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
 
 
 class LeadCreate(BaseModel):
