@@ -33,7 +33,7 @@ app.include_router(mailboxes.router)
 app.include_router(dashboard.router)
 app.include_router(crm.router)
 
-frontend_path = os.path.join(os.path.dirname(__file__), "..")
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 
 if os.path.exists(os.path.join(frontend_path, "index.html")):
     app.mount("/static", StaticFiles(directory=frontend_path), name="static")

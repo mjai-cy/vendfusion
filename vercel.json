@@ -16,31 +16,35 @@
     },
     {
       "src": "/(index\\.html)",
-      "dest": "/index.html"
+      "dest": "/frontend/index.html"
     },
     {
       "src": "/(dashboard\\.html)",
-      "dest": "/dashboard.html"
+      "dest": "/frontend/dashboard.html"
     },
     {
       "src": "/(app\\.js)",
-      "dest": "/app.js"
+      "dest": "/frontend/app.js"
     },
     {
       "src": "/(logo\\.svg)",
-      "dest": "/logo.svg"
+      "dest": "/frontend/logo.svg"
     },
     {
       "src": "/assets/(.*)",
-      "dest": "/assets/$1"
+      "dest": "/frontend/assets/$1"
+    },
+    {
+      "src": "/oppora_assets/(.*)",
+      "dest": "/frontend/oppora_assets/$1"
     },
     {
       "src": "/(dashboard|leads|campaigns|mailboxes|ideal-customer|lists|ai-workflow|finder|email-accounts|unibox|linkedin|crm|reports|settings|integrations|setup-guide)(.*)",
-      "dest": "/dashboard.html"
+      "dest": "/frontend/dashboard.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/frontend/index.html"
     }
   ]
 }
