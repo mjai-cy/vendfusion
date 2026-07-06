@@ -56,6 +56,45 @@ const Auth = {
         return user;
     },
 
+    async verifyOTP(email, otp) {
+        const res = await fetch(`${API_BASE}/api/auth/verify-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || 'Verification failed');
+        }
+        return await res.json();
+    },
+
+    async forgotPassword(email) {
+        const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || 'Failed to send reset link');
+        }
+        return await res.json();
+    },
+
+    async resetPassword(token, newPassword) {
+        const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, new_password: newPassword })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || 'Reset failed');
+        }
+        return await res.json();
+    },
+
     updateUI() {
         const authBtns = document.getElementById('auth-buttons');
         const userMenu = document.getElementById('user-menu');
@@ -370,10 +409,97 @@ async function handleRegister(e) {
 
     try {
         await Auth.register(email, password, name, company);
+        showNotification('Registration successful! Please verify your email.');
+        showOTPModal(email, password);
+    } catch (err) {
+        showNotification(err.message, 'error');
+    }
+}
+
+function showOTPModal(email, password) {
+    showModal('Verify Email', `
+        <form onsubmit="handleVerifyOTP(event, '${email}', '${password}')">
+            <div class="space-y-4">
+                <p class="text-sm text-gray-500">We sent a 6-digit code to ${email}</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Enter OTP</label>
+                    <input id="verify-otp" type="text" required maxlength="6" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue text-center tracking-widest text-lg font-bold">
+                </div>
+                <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Verify & Login</button>
+            </div>
+        </form>
+    `);
+}
+
+async function handleVerifyOTP(e, email, password) {
+    e.preventDefault();
+    const otp = document.getElementById('verify-otp').value;
+    try {
+        await Auth.verifyOTP(email, otp);
+        showNotification('Email verified!');
         await Auth.login(email, password);
-        showNotification('Account created successfully!');
         closeModal();
         window.location.href = '/dashboard';
+    } catch (err) {
+        showNotification(err.message, 'error');
+    }
+}
+
+function showForgotPasswordModal() {
+    showModal('Forgot Password', `
+        <form onsubmit="handleForgotPassword(event)">
+            <div class="space-y-4">
+                <p class="text-sm text-gray-500">Enter your email to receive a reset token.</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input id="forgot-email" type="email" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                </div>
+                <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Send Reset Token</button>
+                <p class="text-center text-sm text-gray-500"><a href="#" onclick="showResetPasswordModal()" class="text-brand-blue font-semibold hover:underline">I already have a token</a></p>
+                <p class="text-center text-sm text-gray-500"><a href="#" onclick="showLoginModal()" class="text-gray-500 hover:underline">Back to Login</a></p>
+            </div>
+        </form>
+    `);
+}
+
+async function handleForgotPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value;
+    try {
+        await Auth.forgotPassword(email);
+        showNotification('If registered, a reset token was sent to your email.');
+        showResetPasswordModal();
+    } catch (err) {
+        showNotification(err.message, 'error');
+    }
+}
+
+function showResetPasswordModal() {
+    showModal('Reset Password', `
+        <form onsubmit="handleResetPassword(event)">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reset Token</label>
+                    <input id="reset-token" type="text" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <input id="reset-new-password" type="password" required minlength="6" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
+                </div>
+                <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Update Password</button>
+            </div>
+        </form>
+    `);
+}
+
+async function handleResetPassword(e) {
+    e.preventDefault();
+    const token = document.getElementById('reset-token').value;
+    const newPassword = document.getElementById('reset-new-password').value;
+    try {
+        await Auth.resetPassword(token, newPassword);
+        showNotification('Password updated! You can now login.');
+        showLoginModal();
     } catch (err) {
         showNotification(err.message, 'error');
     }
@@ -657,7 +783,10 @@ function showLoginModal() {
                     <input id="login-password" type="password" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue">
                 </div>
                 <button type="submit" class="w-full bg-brand-blue text-white font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors">Login</button>
-                <p class="text-center text-sm text-gray-500">Don't have an account? <a href="#" onclick="showRegisterModal()" class="text-brand-blue font-semibold">Sign up</a></p>
+                <div class="flex items-center justify-between mt-2">
+                    <p class="text-sm text-gray-500">Don't have an account? <a href="#" onclick="showRegisterModal()" class="text-brand-blue font-semibold hover:underline">Sign up</a></p>
+                    <a href="#" onclick="showForgotPasswordModal()" class="text-sm font-medium text-gray-500 hover:text-brand-blue hover:underline">Forgot Password?</a>
+                </div>
             </div>
         </form>
     `);

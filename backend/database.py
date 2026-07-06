@@ -10,6 +10,8 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./oppora.db")
 
 if DATABASE_URL.startswith("postgresql"):
+    if "supabase" in DATABASE_URL and "sslmode=require" not in DATABASE_URL:
+        DATABASE_URL += "&sslmode=require" if "?" in DATABASE_URL else "?sslmode=require"
     engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_size=10, max_overflow=20)
 else:
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -27,6 +29,9 @@ class User(Base):
     full_name = Column(String)
     company_name = Column(String)
     is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+    verification_otp = Column(String, nullable=True)
+    reset_token = Column(String, nullable=True)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
