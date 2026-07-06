@@ -15,7 +15,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:3000").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:3000,https://vendfusion.vercel.app,*.vercel.app").split(",")
 
 app.add_middleware(
     CORSMiddleware,

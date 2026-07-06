@@ -12,12 +12,32 @@
       "dest": "api/index.py"
     },
     {
-      "src": "/(.*\\.(html|js|css|svg|png|jpg|ico))",
-      "dest": "/$1"
+      "src": "/(index\\.html)",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(dashboard\\.html)",
+      "dest": "/dashboard.html"
+    },
+    {
+      "src": "/(app\\.js)",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/(logo\\.svg)",
+      "dest": "/logo.svg"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(dashboard|leads|campaigns|mailboxes|ideal-customer|lists|ai-workflow|finder|email-accounts|unibox|linkedin|crm|reports|settings|integrations|setup-guide)(.*)",
+      "dest": "/dashboard.html"
     },
     {
       "src": "/(.*)",
-      "dest": "api/index.py"
+      "dest": "/index.html"
     }
   ]
 }
